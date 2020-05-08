@@ -39,4 +39,8 @@ public class TabuPlayer{
     public void subtractPoints(int points){
         this.points -= points;
     }
+
+    public void sendMessage(String s) {
+        this.player.sendMessage(s);
+    }
 }

@@ -233,6 +233,7 @@ public class Tabu implements CommandExecutor, Listener {
         }
         return false;
     }
+
     public static boolean banPlayer(String player) {
         for(TabuPlayer p : playerList) {
             if(p.getName().equalsIgnoreCase(player)) {
@@ -244,6 +245,7 @@ public class Tabu implements CommandExecutor, Listener {
         }
         return false;
     }
+
     public static void joinGame(TabuPlayer player) {
         if(bannedPlayers.contains(player.getPlayer())) {
             player.getPlayer().sendMessage(prefix + "Du kannst dem Spiel nicht beitreten, da du gebannt wurdest!");
