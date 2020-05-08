@@ -10,6 +10,7 @@ import java.util.*;
 public class TabuGame {
     private Hashtable<String, TabuPlayer> players;
     private ArrayList<String> wordList = new ArrayList<String>();
+    private ArrayList<TabuPlayer> winners = new ArrayList<>();
     private String name;
     private int rounds;
     private int gameID;
@@ -21,6 +22,7 @@ public class TabuGame {
     private boolean roundRunning = false;
     private String currentWord;
     private TabuTimer timer;
+    private Set<String> keys;
 
 
     public TabuGame(TabuPlayer creator, String name, int rounds) {
@@ -38,13 +40,14 @@ public class TabuGame {
     }
 
     public TabuGame(TabuPlayer creator) {
-        this(creator,"Tabu-Game" + games, 3);
+        this(creator,"Tabu-Spiel" + games, 3);
     }
 
     public boolean addPlayer(Player player) {
         boolean playerAlreadyAdded = this.players.containsKey(player.getName());
         if (!playerAlreadyAdded) {
             players.put(player.getName(), new TabuPlayer(player));
+            keys = players.keySet();
             return true;
         }
         return false;
@@ -59,6 +62,7 @@ public class TabuGame {
     }
 
     public boolean removePlayer(Player player) {
+        keys = players.keySet();
         return null == players.remove(player.getName());
     }
 
@@ -96,12 +100,39 @@ public class TabuGame {
                 String word = wordList.get(random.nextInt(wordList.size()));
                 currentWord = word;
                 currentPlayer = players.get(key);
-                choosePlayer(currentPlayer, word);
-                while(roundRunning) {
+                if(currentPlayer != null) {
+                    choosePlayer(currentPlayer, word);
+                    while (roundRunning) {
 
+                    }
                 }
             }
         }
+        int winnerPoints = 0;
+        TabuPlayer winner;
+        for(String key : keys) {
+            int points = players.get(key).getPoints();
+            if(points == winnerPoints) {
+                winners.add(players.get(key));
+            } else if(points > winnerPoints) {
+                winners.clear();
+                winners.add(players.get(key));
+            }
+        }
+        if(winners.size() == 1) {
+            winner = winners.get(0);
+            sendMessageToAllPlayers(winner.getName() + " hat das Spiel mit " + winnerPoints + " Punkten gewonnen!");
+        } else {
+            StringBuilder sb = new StringBuilder();
+            for(TabuPlayer player: winners) {
+                sb.append(player.getName()).append(", ");
+            }
+            String query = sb.substring(0,sb.length()-2);
+            sendMessageToAllPlayers(query + " haben das Spiel mit jeweils " + winnerPoints + " Punkten gewonnen!");
+        }
+
+        Tabu.quitGame(this);
+
     }
     private void stop() {
         running = false;
@@ -128,7 +159,7 @@ public class TabuGame {
     @EventHandler
     public void chatEvent(AsyncPlayerChatEvent e) {
         if(e.getPlayer().equals(currentPlayer.getPlayer())) {
-            if(!e.getMessage().startsWith("/")) {
+            if(!e.getMessage().startsWith("/tabu")) {
                 e.setCancelled(true);
                 e.getPlayer().sendMessage(prefix+"Du kannst keine Nachrichten senden, während du an der Reihe bist");
             }

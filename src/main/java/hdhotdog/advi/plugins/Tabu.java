@@ -309,4 +309,9 @@ public class Tabu implements CommandExecutor, Listener {
         }
     }
 
+    public static void quitGame(TabuGame game) {
+        //TODO alle Spieler entfernen/kicken
+        tabuGames.remove(game);
+    }
+
 }
