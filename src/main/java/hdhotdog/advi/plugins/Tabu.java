@@ -40,25 +40,6 @@ public class Tabu implements CommandExecutor, Listener {
     public Tabu() {
 
     }
-    /*public static boolean loadFile() {
-        wordFile = new File(path);
-        try {
-            Scanner scanner = new Scanner(wordFile);
-            while(scanner.hasNextLine()) {
-                wordList.add(scanner.nextLine().trim());
-            }
-            scanner.close();
-        } catch (IOException e) {
-            return false;
-        }
-        return true;
-    }*/
-    /*public FileConfiguration reloadFile() {
-        return main.loadWordFile();
-    }
-    public void save() {
-        try wordConfig.save();
-    }*/
 
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         /**
@@ -69,6 +50,8 @@ public class Tabu implements CommandExecutor, Listener {
             boolean hasName = false;
             int rounds = 0;
             boolean customRounds = false;
+            TabuPlayer creator = null;
+            boolean fromPlayer = false;
             if(args.length >= 2) {
                 gameName = args[1];
                 hasName = true;
@@ -91,8 +74,10 @@ public class Tabu implements CommandExecutor, Listener {
             }
 
             if(sender instanceof Player) {
-                creator = (Player)sender;
+                creator = new TabuPlayer((Player)sender);
+                fromPlayer = true;
             }
+
             TabuGame tabuGame;
             if(hasName && customRounds) {
                  tabuGame = new TabuGame(gameName, rounds);
@@ -103,7 +88,11 @@ public class Tabu implements CommandExecutor, Listener {
             }
             tabuGames.add(tabuGame);
 
-            sentToAllOnlinePlayer(ChatColor.GREEN + creator.getName() +" hat ein Tabu-Spiel mit " + rounds + "Runden gestartet!");
+            String creatorName = "Console";
+            if(fromPlayer) {
+                creatorName = creator.getName();
+            }
+            sentToAllOnlinePlayer(ChatColor.GREEN + creatorName +" hat ein Tabu-Spiel mit " + rounds + "Runden gestartet!");
 
             return true;
         }
@@ -215,27 +204,6 @@ public class Tabu implements CommandExecutor, Listener {
         return true;
     }
 
-    /*public static boolean addWord(String word) {
-        if(!running) {
-           loadFile();
-        }
-        for (String s : wordList) {
-            if (s.equalsIgnoreCase(word)) {
-                return false;
-            }
-        }
-        wordList.add(word);
-        try {
-            FileWriter fw = new FileWriter(wordFile);
-            for(String s : wordList) {
-                fw.append(s).append("\n");
-            }
-            fw.close();
-        } catch (IOException e) {
-            return false;
-        }
-        return true;
-    }*/
     public static boolean addWord(String word) {
 
         if(!wordList.contains(word)) {
@@ -244,25 +212,7 @@ public class Tabu implements CommandExecutor, Listener {
         return false;
 
     }
-    /*public boolean deleteWord(String word) {
-        if(!running) {
-            loadFile();
-        }
-        boolean removed = wordList.remove(word);
-        if(removed) {
-            try {
-                FileWriter fw = new FileWriter(wordFile);
-                fw.write("");
-                for (String s : wordList) {
-                    fw.append(s).append("\n");
-                }
-                fw.close();
-            } catch (IOException e) {
-                return false;
-            }
-        }
-        return removed;
-    }*/
+
     public static boolean deleteWord(String word) {
         boolean removed = false;
         for(String s : wordList) {
@@ -365,4 +315,5 @@ public class Tabu implements CommandExecutor, Listener {
             p.sendMessage(prefix + message);
         }
     }
+
 }
