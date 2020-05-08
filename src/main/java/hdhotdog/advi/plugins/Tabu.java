@@ -71,7 +71,7 @@ public class Tabu implements CommandExecutor, Listener {
                 return true;
             }
             try {
-                if (Integer.parseInt(args[1]) < 0) {
+                if (Integer.parseInt(args[1]) < 1) {
                     throw new IllegalArgumentException();
                 } else {
                     rounds = Integer.parseInt(args[1]);

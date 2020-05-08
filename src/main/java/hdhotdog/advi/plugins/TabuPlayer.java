@@ -2,7 +2,7 @@ package hdhotdog.advi.plugins;
 
 import org.bukkit.entity.Player;
 
-public class TabuPlayer {
+public class TabuPlayer{
     private Player player;
     private String name;
     private int points = 0;
