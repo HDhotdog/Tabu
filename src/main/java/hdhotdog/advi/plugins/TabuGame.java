@@ -2,11 +2,13 @@ package hdhotdog.advi.plugins;
 
 import org.bukkit.entity.Player;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Map;
 
 public class TabuGame {
     private Hashtable<String, TabuPlayer> players;
-    private ArrayList<String> wordList = new ArrayList<String>();
     private String name;
     private int rounds;
     private int gameID;
@@ -57,23 +59,6 @@ public class TabuGame {
             playersRemoved[i] = removePlayer(players[i]);
         }
         return playersRemoved;
-    }
-    public boolean addWord(String word) {
-        for(String w : wordList) {
-            if(w.equalsIgnoreCase(word)) {
-                return false;
-            }
-        }
-        return wordList.add(word);
-    }
-    public boolean removeWord(String word) {
-        for(String w : wordList) {
-            if(w.equalsIgnoreCase(word)) {
-                wordList.remove(word);
-                return true;
-            }
-        }
-        return false;
     }
 
 

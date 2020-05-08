@@ -1,0 +1,83 @@
+Index: src/main/java/hdhotdog/advi/plugins/TabuGame.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package hdhotdog.advi.plugins;\n\nimport org.bukkit.entity.Player;\n\nimport java.util.HashMap;\nimport java.util.HashSet;\nimport java.util.Hashtable;\nimport java.util.Map;\n\npublic class TabuGame {\n    private Hashtable<String, TabuPlayer> players;\n    private String name;\n    private int rounds;\n    private int gameID;\n    private static int games = 0;\n    private TabuPlayer creator;\n\n    public TabuGame(String name, int rounds) {\n        this.name = name;\n        this.rounds = rounds;\n        this.gameID = games;\n        games++;\n\n        this.players = new Hashtable<>();\n    }\n\n    public TabuGame(String name) {\n        this(name, 3);\n    }\n\n    public TabuGame() {\n        this(\"Tabu-Game\" + games, 3);\n    }\n\n    public boolean addPlayer(Player player) {\n        boolean playerAlreadyAdded = this.players.containsKey(player.getName());\n        if (!playerAlreadyAdded) {\n            players.put(player.getName(), new TabuPlayer(player));\n            return true;\n        }\n        return false;\n    }\n\n    public boolean[] addPlayers(Player[] players){\n        boolean[] playersAdded = new boolean[players.length];\n        for (int i = 0; i < players.length; i++) {\n            playersAdded[i] = addPlayer(players[i]);\n        }\n        return playersAdded;\n    }\n\n    public boolean removePlayer(Player player) {\n        return null == players.remove(player.getName());\n    }\n\n    public boolean[] removePlayers(Player[] players){\n        boolean[] playersRemoved = new boolean[players.length];\n        for (int i = 0; i < players.length; i++) {\n            playersRemoved[i] = removePlayer(players[i]);\n        }\n        return playersRemoved;\n    }\n\n\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/hdhotdog/advi/plugins/TabuGame.java	(revision 5b4a275b52d1654c5cf114569803f327ae356242)
++++ src/main/java/hdhotdog/advi/plugins/TabuGame.java	(date 1588968249113)
+@@ -61,5 +61,73 @@
+         return playersRemoved;
+     }
+ 
++    public static boolean addWord(String word) {
++
++        if(!wordList.contains(word)) {
++            return wordList.add(word);
++        }
++        return false;
++
++    }
++
++    public static boolean deleteWord(String word) {
++        boolean removed = false;
++        for(String s : wordList) {
++            if(s.equalsIgnoreCase(word)) {
++                removed = wordList.remove(word);
++            }
++        }
++        return removed;
++    }
++
++    public static boolean kickPlayer(String player) {
++        for(TabuPlayer p : playerList) {
++            if(p.getName().equalsIgnoreCase(player)) {
++                playerList.remove(p);
++                p.getPlayer().sendMessage(prefix + "Du wurdest entfernt");
++                return true;
++            }
++        }
++        return false;
++    }
+ 
++    public static boolean banPlayer(String player) {
++        for(TabuPlayer p : playerList) {
++            if(p.getName().equalsIgnoreCase(player)) {
++                playerList.remove(p);
++                bannedPlayers.add(p.getPlayer());
++                p.getPlayer().sendMessage( prefix + "Du wurdest gebannt");
++                return true;
++            }
++        }
++        return false;
++    }
++
++    public static void joinGame(TabuPlayer player) {
++        if(bannedPlayers.contains(player.getPlayer())) {
++            player.getPlayer().sendMessage(prefix + "Du kannst dem Spiel nicht beitreten, da du gebannt wurdest!");
++        } else {
++            if(playerListcontainsPlayer(player.getPlayer())) {
++                player.getPlayer().sendMessage(prefix +"Du bist dem Spiel schon beigetreten");
++            } else {
++                player.getPlayer().sendMessage( prefix + "Spiel beigetreten!");
++                for(TabuPlayer p : playerList) {
++                    p.getPlayer().sendMessage(prefix + player.getName() + " hat das Spiel betreten");
++                }
++                playerList.add(player);
++            }
++        }
++    }
++
++    public static void leaveGame(TabuPlayer player) {
++        if(playerList.contains(player)) {
++            player.getPlayer().sendMessage(prefix + "Du bist in keinem Spiel");
++        } else {
++            playerList.remove(player);
++            player.getPlayer().sendMessage(prefix + "Du hast das Spiel verlassen");
++            for(TabuPlayer p : playerList) {
++                p.getPlayer().sendMessage(prefix + player.getName() + " hat das Spiel verlassen");
++            }
++        }
++    }
+ }
