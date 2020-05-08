@@ -16,20 +16,19 @@ import java.util.*;
 
 
 public class Tabu implements CommandExecutor, Listener {
+
+    private static ArrayList<TabuGame> tabuGames = new ArrayList<TabuGame>();
+
+
     private static FileConfiguration wordConfig;
     public static LinkedList<TabuPlayer> playerList = new LinkedList<>();
     public static ArrayList<Player> bannedPlayers = new ArrayList<Player>();
     public static ArrayList<String> wordList = new ArrayList<>();
-    //public static Set<String> wordList = ne
-    public static File wordFile;
     public static boolean running = false;
     public static boolean isStarted = false;
-    public static int rounds;
-    public static int currentRound;
     public static String prefix = ChatColor.BLUE + "[TABU] ";
     public static String currentWord;
     public static TabuPlayer currentPlayer;
-    //public static HashMap<Player, Integer> playerPoints = new HashMap<>();
     public static String path = "words.txt";
     public static Main main;
     public static Player creator;
@@ -65,35 +64,47 @@ public class Tabu implements CommandExecutor, Listener {
         /**
          * Spiel erstellen
          */
-        if(args.length == 2 && args[0].equalsIgnoreCase("create")) {
-            if(running) {
-                sender.sendMessage(ChatColor.RED + "Spiel wurde schon erstellt.");
-                return true;
+        if(args[0].equalsIgnoreCase("create")) {
+            String gameName = "";
+            boolean hasName = false;
+            int rounds = 0;
+            boolean customRounds = false;
+            if(args.length >= 2) {
+                gameName = args[1];
+                hasName = true;
             }
-            try {
-                if (Integer.parseInt(args[1]) < 1) {
-                    throw new IllegalArgumentException();
-                } else {
-                    rounds = Integer.parseInt(args[1]);
+            if(args.length > 2) {
+                try {
+                    if (Integer.parseInt(args[2]) < 1) {
+                        throw new IllegalArgumentException();
+                    } else {
+                        rounds = Integer.parseInt(args[1]);
+                        customRounds = true;
+                    }
+                } catch (NumberFormatException e) {
+                    sender.sendMessage(prefix + "Benutze /tabu create <Name> <Rundenanzahl>");
+                    return true;
+                } catch (IllegalArgumentException e) {
+                    sender.sendMessage(prefix + "Rundenanzahl muss größer als 0 sein");
+                    return true;
                 }
-            } catch (NumberFormatException e) {
-                sender.sendMessage(prefix + "Benutze /tabu create <Rundenanzahl>");
-                return true;
-            } catch (IllegalArgumentException e) {
-                sender.sendMessage(prefix + "Rundenanzahl muss größer als 0 sein");
             }
-            /*if(!loadFile()) {
-                sender.sendMessage(ChatColor.RED + "Wortliste konnte nicht korrekt geladen werden.");
-            } else {
-                sender.sendMessage(ChatColor.GREEN + "Es wurde ein Tabu-Spiel mit " +rounds +" gestartet!") ;
-                running = true;
-            }*/
+
             if(sender instanceof Player) {
                 creator = (Player)sender;
             }
-            sentToAllOnlinePlayer(ChatColor.GREEN + "Es wurde ein Tabu-Spiel mit " +rounds +"Runden gestartet!");
-            //sender.sendMessage(ChatColor.GREEN + "Es wurde ein Tabu-Spiel mit " +rounds +" gestartet!") ;
-            running = true;
+            TabuGame tabuGame;
+            if(hasName && customRounds) {
+                 tabuGame = new TabuGame(gameName, rounds);
+            } else if (hasName) {
+                 tabuGame = new TabuGame(gameName);
+            } else {
+                 tabuGame = new TabuGame();
+            }
+            tabuGames.add(tabuGame);
+
+            sentToAllOnlinePlayer(ChatColor.GREEN + creator.getName() +" hat ein Tabu-Spiel mit " + rounds + "Runden gestartet!");
+
             return true;
         }
         /**

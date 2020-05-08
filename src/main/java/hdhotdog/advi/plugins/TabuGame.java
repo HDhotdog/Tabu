@@ -1,9 +1,4 @@
 package hdhotdog.advi.plugins;
-
-import org.bukkit.entity.Player;
-import sun.tools.jconsole.Tab;
-
-import java.util.ArrayList;
 import java.util.HashSet;
 
 public class TabuGame {
@@ -28,7 +23,6 @@ public class TabuGame {
     public TabuGame(){
         this("Tabu-Game" + games, 3);
     }
-
 
 
 
