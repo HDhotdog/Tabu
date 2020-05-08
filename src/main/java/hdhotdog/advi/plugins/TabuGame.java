@@ -36,16 +36,16 @@ public class TabuGame {
     }
 
     //-------- addPlayer -----------------------------------------------------------------------------------------------
-    public boolean addPlayer(Player player) {
-        boolean playerAlreadyAdded = this.players.containsKey(player.getName());
+    public boolean addPlayer(String player) {
+        boolean playerAlreadyAdded = this.players.containsKey(player);
         if (!playerAlreadyAdded) {
-            players.put(player.getName(), new TabuPlayer(player));
+            players.put(player, new TabuPlayer(Bukkit.getPlayer(player)));
             return true;
         }
         return false;
     }
 
-    public boolean[] addPlayers(Player[] players){
+    public boolean[] addPlayers(String[] players){
         boolean[] playersAdded = new boolean[players.length];
         for (int i = 0; i < players.length; i++) {
             playersAdded[i] = addPlayer(players[i]);
@@ -123,7 +123,7 @@ public class TabuGame {
     //-------- joinGame ------------------------------------------------------------------------------------------------
     public void joinGame(String player) {
         if(!this.bannedPlayers.contains(player)){
-            if(addPlayer(Bukkit.getPlayer(player))){
+            if(addPlayer(player)){
                 sendMessage(player, "Spiel beigetreten!");
                 sendMessageToAllPlayers(player + " ist dem Spiel beigetreten.");
             }
