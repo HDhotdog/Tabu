@@ -41,8 +41,24 @@ public class TabuGame {
         return false;
     }
 
-    public boolean removePlayer() {
+    public boolean[] addPlayers(Player[] players){
+        boolean[] playersAdded = new boolean[players.length];
+        for (int i = 0; i < players.length; i++) {
+            playersAdded[i] = addPlayer(players[i]);
+        }
+        return playersAdded;
+    }
 
+    public boolean removePlayer(Player player) {
+        return null == players.remove(player.getName());
+    }
+
+    public boolean[] removePlayers(Player[] players){
+        boolean[] playersRemoved = new boolean[players.length];
+        for (int i = 0; i < players.length; i++) {
+            playersRemoved[i] = removePlayer(players[i]);
+        }
+        return playersRemoved;
     }
 
 
