@@ -80,11 +80,11 @@ public class Tabu implements CommandExecutor, Listener {
 
             TabuGame tabuGame;
             if(hasName && customRounds) {
-                 tabuGame = new TabuGame(gameName, rounds);
+                 tabuGame = new TabuGame(creator, gameName, rounds);
             } else if (hasName) {
-                 tabuGame = new TabuGame(gameName);
+                 tabuGame = new TabuGame(creator, gameName);
             } else {
-                 tabuGame = new TabuGame();
+                 tabuGame = new TabuGame(creator);
             }
             tabuGames.add(tabuGame);
 
