@@ -126,10 +126,10 @@ public class TabuGame {
             if(addPlayer(player)){
                 sendMessage(player, "Spiel beigetreten!");
                 sendMessageToAllPlayers(player + " ist dem Spiel beigetreten.");
+                return;
             }
-            else{
-                sendMessage(player, "Du bist dem Spiel schon beigetreten!");
-            }
+            sendMessage(player, "Du bist dem Spiel schon beigetreten!");
+            return;
         }
         sendMessage(player, "Du kannst dem Spiel nicht beitreten, da du gebannt wurdest!");
     }
@@ -140,6 +140,7 @@ public class TabuGame {
             removePlayer(player);
             sendMessage(player, "Du hast das Spiel verlassen.");
             sendMessageToAllPlayers(player + " hat das Spiel verlassen.");
+            return;
         }
         sendMessage(player, "Du bist in keinem Spiel");
     }
