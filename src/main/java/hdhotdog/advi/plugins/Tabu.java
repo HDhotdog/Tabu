@@ -58,10 +58,11 @@ public class Tabu implements CommandExecutor, Listener {
             }
             if(args.length > 2) {
                 try {
+                    sender.sendMessage(args[2].trim());
                     if (Integer.parseInt(args[2]) < 1) {
                         throw new IllegalArgumentException();
                     } else {
-                        rounds = Integer.parseInt(args[1]);
+                        rounds = Integer.parseInt(args[2]);
                         customRounds = true;
                     }
                 } catch (NumberFormatException e) {
@@ -92,7 +93,10 @@ public class Tabu implements CommandExecutor, Listener {
             if(fromPlayer) {
                 creatorName = creator.getName();
             }
-            sentToAllOnlinePlayer(ChatColor.GREEN + creatorName +" hat ein Tabu-Spiel mit " + rounds + "Runden gestartet!");
+            if(rounds == 0) {
+                rounds = 3;
+            }
+            sentToAllOnlinePlayer(ChatColor.GREEN + creatorName +" hat " + gameName + " mit " + rounds + " Runden gestartet!");
 
             return true;
         }
@@ -100,7 +104,13 @@ public class Tabu implements CommandExecutor, Listener {
          * Spiel beenden
          */
         else if(args.length == 1 && args[0].equalsIgnoreCase("quit")) {
-
+            for(TabuGame game : tabuGames) {
+                if(game.getPlayers().containsKey(sender.getName())) {
+                    if(game.getCreator().getPlayer().equals(sender)) {
+                        game.quitGame();
+                    }
+                }
+            }
         }
         /**
          * Wort hinzufügen

@@ -37,6 +37,9 @@ public class TabuGame {
         games++;
 
         this.players = new Hashtable<>();
+        this.words = new HashSet<>();
+        creator.sendMessage("Du bist ein Creator");
+        creator.sendMessage(this.toString());
     }
 
     public TabuGame(TabuPlayer creator, String name) {
@@ -49,6 +52,18 @@ public class TabuGame {
 
     public TabuGame(){
 
+    }
+
+    public Hashtable<String, TabuPlayer> getPlayers() {
+        return this.players;
+    }
+    public TabuPlayer getCreator() {
+        return this.creator;
+    }
+
+    public void quitGame() {
+        players.forEach((key, value) -> kickPlayer(key, "Das Spiel ist vorbei."));
+        creator.sendMessage(prefix()+this.name + " wurde beendet");
     }
 
     //-------- addPlayer -----------------------------------------------------------------------------------------------
@@ -266,5 +281,7 @@ public class TabuGame {
             }
         }
     }
+
+
 }
 
