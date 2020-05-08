@@ -80,11 +80,11 @@ public class Tabu implements CommandExecutor, Listener {
 
             TabuGame tabuGame;
             if(hasName && customRounds) {
-                 tabuGame = new TabuGame(gameName, rounds);
+                 tabuGame = new TabuGame(creator, gameName, rounds);
             } else if (hasName) {
-                 tabuGame = new TabuGame(gameName);
+                 tabuGame = new TabuGame(creator, gameName);
             } else {
-                 tabuGame = new TabuGame();
+                 tabuGame = new TabuGame(creator);
             }
             tabuGames.add(tabuGame);
 
@@ -276,15 +276,8 @@ public class Tabu implements CommandExecutor, Listener {
 
     @EventHandler
     public void chatEvent(AsyncPlayerChatEvent e) {
-        if(e.getPlayer().equals(currentPlayer.getPlayer())) {
-            if(!e.getMessage().startsWith("/")) {
-                e.setCancelled(true);
-                e.getPlayer().sendMessage(prefix+"Du kannst keine Nachrichten senden, während du an der Reihe bist");
-            }
-        } else {
-            if(playerListcontainsPlayer(e.getPlayer()) && e.getMessage().equalsIgnoreCase(currentWord)) {
-                sendMessageToAllPlayers(e.getPlayer().getName() + " hat den Begriff " + ChatColor.YELLOW + currentWord + ChatColor.BLUE + "korrekt erraten!");
-            }
+        for(TabuGame game : tabuGames) {
+            game.chatEvent(e);
         }
     }
 
@@ -316,6 +309,11 @@ public class Tabu implements CommandExecutor, Listener {
         for(Player p : Bukkit.getOnlinePlayers()) {
             p.sendMessage(prefix + message);
         }
+    }
+
+    public static void quitGame(TabuGame game) {
+        //TODO alle Spieler entfernen/kicken
+        tabuGames.remove(game);
     }
 
 }

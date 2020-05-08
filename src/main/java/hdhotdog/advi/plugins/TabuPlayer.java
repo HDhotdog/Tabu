@@ -28,18 +28,6 @@ public class TabuPlayer{
         this.points++;
     }
 
-    public void addPoints(int points){
-        this.points += points;
-    }
-
-    public void subtractPoint(){
-        this.points--;
-    }
-
-    public void subtractPoints(int points){
-        this.points -= points;
-    }
-
     public void sendMessage(String s) {
         this.player.sendMessage(s);
     }
