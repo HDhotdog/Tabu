@@ -274,15 +274,8 @@ public class Tabu implements CommandExecutor, Listener {
 
     @EventHandler
     public void chatEvent(AsyncPlayerChatEvent e) {
-        if(e.getPlayer().equals(currentPlayer.getPlayer())) {
-            if(!e.getMessage().startsWith("/")) {
-                e.setCancelled(true);
-                e.getPlayer().sendMessage(prefix+"Du kannst keine Nachrichten senden, während du an der Reihe bist");
-            }
-        } else {
-            if(playerListcontainsPlayer(e.getPlayer()) && e.getMessage().equalsIgnoreCase(currentWord)) {
-                sendMessageToAllPlayers(e.getPlayer().getName() + " hat den Begriff " + ChatColor.YELLOW + currentWord + ChatColor.BLUE + "korrekt erraten!");
-            }
+        for(TabuGame game : tabuGames) {
+            game.chatEvent(e);
         }
     }
 
