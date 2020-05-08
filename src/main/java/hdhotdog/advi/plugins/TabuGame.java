@@ -47,6 +47,10 @@ public class TabuGame {
         this(creator,"Tabu-Spiel" + games, 3);
     }
 
+    public TabuGame(){
+
+    }
+
     //-------- addPlayer -----------------------------------------------------------------------------------------------
     public boolean addPlayer(String player) {
         boolean playerAlreadyAdded = this.players.containsKey(player);
@@ -185,6 +189,7 @@ public class TabuGame {
                 this.name, this.players.size(), this.words.size(), this.rounds);
     }
 
+    //-------- game controll -------------------------------------------------------------------------------------------
     public void start() {
         running = true;
         for(int i = 0; i < rounds; i++) {
