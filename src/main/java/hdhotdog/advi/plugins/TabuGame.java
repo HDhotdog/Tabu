@@ -62,7 +62,9 @@ public class TabuGame {
     public TabuPlayer getCreator() {
         return this.creator;
     }
-
+    public String getName() {
+        return this.name;
+    }
     public void quitGame() {
         players.forEach((key, value) -> kickPlayer(key, "Das Spiel ist vorbei."));
         creator.sendMessage(prefix()+this.name + " wurde beendet");

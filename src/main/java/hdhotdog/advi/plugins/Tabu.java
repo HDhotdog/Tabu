@@ -17,7 +17,8 @@ import java.util.*;
 
 public class Tabu implements CommandExecutor, Listener {
 
-    private static ArrayList<TabuGame> tabuGames = new ArrayList<TabuGame>();
+    //private static ArrayList<TabuGame> tabuGames = new ArrayList<TabuGame>();
+    private static Hashtable<String, TabuGame> tabuGames = new Hashtable<>();
 
 
     private static FileConfiguration wordConfig;
@@ -32,6 +33,8 @@ public class Tabu implements CommandExecutor, Listener {
     public static String path = "words.txt";
     public static Main main;
     public static Player creator;
+    public static TabuGame gameOfPlayer;
+    public static boolean isCreatorOfGame;
 
     public Tabu(FileConfiguration fileConfiguration, Main m) {
         wordConfig = fileConfiguration;
@@ -87,7 +90,14 @@ public class Tabu implements CommandExecutor, Listener {
             } else {
                  tabuGame = new TabuGame(creator);
             }
-            tabuGames.add(tabuGame);
+            //tabuGames.add(tabuGame);
+            if(tabuGames.containsKey(tabuGame.getName())) {
+                sender.sendMessage(prefix + "Es existiert bereit ein Spiel mit diesen Namen.");
+                return true;
+            }
+            tabuGames.put(tabuGame.getName(), tabuGame);
+
+
 
             String creatorName = "Console";
             if(fromPlayer) {
@@ -106,14 +116,12 @@ public class Tabu implements CommandExecutor, Listener {
         else if(args.length == 1 && args[0].equalsIgnoreCase("quit")) {
             if(sender instanceof Player) {
                 Player player = (Player)sender;
-                for (TabuGame game : tabuGames) {
-                    if (game.getPlayers().containsKey(player.getName())) {
-                        if (game.getCreator().getPlayer().equals(player)) {
-                            sender.sendMessage("Should quit game");
-                            game.quitGame();
-                        }
-                    }
-                }
+                tabuGames.forEach((keys, value) -> value.quitGame());
+                /*if(gameOfPlayer.getCreator().getName().equals(player.getName())) {
+                    sender.sendMessage("Should quit game");
+                    gameOfPlayer.quitGame();
+                }*/
+
             }
         }
         /**
@@ -218,6 +226,12 @@ public class Tabu implements CommandExecutor, Listener {
         return true;
     }
 
+    private void isPlayerInGame(String player, TabuGame game) {
+        if(game.getPlayers().containsKey(player)) {
+            gameOfPlayer = game;
+        }
+    }
+
     public static boolean addWord(String word) {
 
         if(!wordList.contains(word)) {
@@ -290,9 +304,7 @@ public class Tabu implements CommandExecutor, Listener {
 
     @EventHandler
     public void chatEvent(AsyncPlayerChatEvent e) {
-        for(TabuGame game : tabuGames) {
-            game.chatEvent(e);
-        }
+        tabuGames.forEach((keys,value) -> value.chatEvent(e));
     }
 
     public void sendMessageToAllPlayers(String message) {
