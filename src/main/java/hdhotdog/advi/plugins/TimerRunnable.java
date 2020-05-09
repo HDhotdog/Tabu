@@ -1,18 +1,24 @@
 package hdhotdog.advi.plugins;
 
 import org.bukkit.ChatColor;
+import org.bukkit.scheduler.BukkitRunnable;
 
-public class TimerRunnable implements Runnable {
+public class TimerRunnable extends BukkitRunnable {
     TabuGame game;
-    int sec = 120;
+    TabuPlayer player;
+    int secs = 10;
     public TimerRunnable(TabuGame game, TabuPlayer player, String word) {
         this.game = game;
+        this.player = player;
         game.sendMessageToAllPlayers(player.getName() + " ist an der Reihe");
         player.sendMessage(game.prefix() + "Du bist an der Reihe. Dein Wort lautet: " + ChatColor.YELLOW + word);
+
         this.run();
     }
+    @Override
     public void run() {
-        switch (sec) {
+        player.sendMessage(secs+"");
+        switch (secs) {
             case 90:
                 game.sendMessageToAllPlayers(game.prefix() + "Noch 1:30 Minuten");
                 break;
@@ -35,12 +41,13 @@ public class TimerRunnable implements Runnable {
                 game.sendMessageToAllPlayers(game.prefix() + "1");
                 break;
         }
-        sec--;
-        if(sec == 0) {
+
+        if(secs <= 0) {
             this.stop();
         }
     }
     public void stop() {
+        player.sendMessage("Vorbei");
         game.stopTimer();
     }
 }
