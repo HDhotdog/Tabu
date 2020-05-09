@@ -36,7 +36,9 @@ public class TabuGame {
         this.gameID = games;
         games++;
 
+        this.winners.add(creator);
         this.players = new Hashtable<>();
+        this.bannedPlayers = new HashSet<String>();
     }
 
     public TabuGame(TabuPlayer creator, String name) {
@@ -47,15 +49,12 @@ public class TabuGame {
         this(creator,"Tabu-Spiel" + games, 3);
     }
 
-    public TabuGame(){
-
-    }
-
     //-------- addPlayer -----------------------------------------------------------------------------------------------
     public boolean addPlayer(String player) {
         boolean playerAlreadyAdded = this.players.containsKey(player);
-        if (!playerAlreadyAdded) {
-            players.put(player, new TabuPlayer(Bukkit.getPlayer(player)));
+        Player newPlayer = Bukkit.getPlayer(player);
+        if (!playerAlreadyAdded && newPlayer != null) {
+            players.put(player, new TabuPlayer(newPlayer));
             keys = players.keySet();
             return true;
         }
@@ -190,61 +189,60 @@ public class TabuGame {
     }
 
     //-------- game controll -------------------------------------------------------------------------------------------
-    public void start() {
+    public void start(){
         running = true;
-        for(int i = 0; i < rounds; i++) {
-            Random random = new Random();
-            Set<String> keys = players.keySet();
-            for(String key : keys) {
-                String word = wordList.get(random.nextInt(wordList.size()));
-                currentWord = word;
-                currentPlayer = players.get(key);
-                if(currentPlayer != null) {
-                    choosePlayer(currentPlayer, word);
-                    while (roundRunning) {
-
-                    }
-                }
-            }
-        }
-        int winnerPoints = 0;
-        TabuPlayer winner;
-        for(String key : keys) {
-            int points = players.get(key).getPoints();
-            if(points == winnerPoints) {
-                winners.add(players.get(key));
-            } else if(points > winnerPoints) {
-                winners.clear();
-                winners.add(players.get(key));
-            }
-        }
-        if(winners.size() == 1) {
-            winner = winners.get(0);
-            sendMessageToAllPlayers(winner.getName() + " hat das Spiel mit " + winnerPoints + " Punkten gewonnen!");
-        } else {
-            StringBuilder sb = new StringBuilder();
-            for(TabuPlayer player: winners) {
-                sb.append(player.getName()).append(", ");
-            }
-            String query = sb.substring(0,sb.length()-2);
-            sendMessageToAllPlayers(query + " haben das Spiel mit jeweils " + winnerPoints + " Punkten gewonnen!");
+        Random randy = new Random();
+        for(;this.rounds > 0; rounds--){
+            players.forEach((playerName, playerObject)-> startRoundFor(playerName));
         }
 
+        this.players.forEach((playerName, playerObject)-> calculateWinners(playerObject));
+        String gewinnerNachricht = "Gewinner: ";
+        for(TabuPlayer winner: this.winners){
+            gewinnerNachricht += winner.getName() + " ";
+        }
+        gewinnerNachricht += String.format("mit %d Punkten", this.winners.get(0).getPoints());
         Tabu.quitGame(this);
-
     }
+
+    private void calculateWinners(TabuPlayer playerObject) {
+        if(winners.get(0).getPoints() < playerObject.getPoints()){
+            winners.clear();
+            winners.add(playerObject);
+        }else if(winners.get(0).getPoints() == playerObject.getPoints()){
+            winners.add(playerObject);
+        }
+    }
+
+    private void startRoundFor(String player){
+        Random randy = new Random();
+        String[] wordArr = this.words.toArray(new String[words.size()]);
+        this.currentWord = wordArr[randy.nextInt(words.size())];
+        currentPlayer = players.get(player);
+        if(currentPlayer != null) {
+            sendMessageToAllPlayers("neue Runde startet");
+            choosePlayer(currentPlayer, this.currentWord);
+            while (roundRunning) {
+
+            }
+            sendMessageToAllPlayers("Runde beedet");
+        }
+    }
+
     private void stop() {
         running = false;
     }
+
     private void choosePlayer(TabuPlayer player, String word) {
         sendMessageToAllPlayers(player.getName() + " ist an der Reihe");
-        player.getPlayer().sendMessage(prefix + "Du bist an der Reihe. Dein Wort lautet: " + ChatColor.YELLOW + word);
+        player.sendMessage(prefix + "Du bist an der Reihe. Dein Wort lautet: " + ChatColor.YELLOW + word);
         timer = new TabuTimer(this);
     }
 
     public void tellRemainingTime(String time) {
         sendMessageToAllPlayers(this.prefix() + "Noch " + time + "!");
     }
+
     public void endRound() {
         this.roundRunning = false;
     }
