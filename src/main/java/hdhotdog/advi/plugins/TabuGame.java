@@ -188,23 +188,23 @@ public class TabuGame {
                 this.name, this.players.size(), this.words.size(), this.rounds);
     }
 
-    //-------- game controll -------------------------------------------------------------------------------------------
+    //-------- game control --------------------------------------------------------------------------------------------
     public void start(){
         running = true;
-        Random randy = new Random();
         for(;this.rounds > 0; rounds--){
             players.forEach((playerName, playerObject)-> startRoundFor(playerName));
         }
 
         this.players.forEach((playerName, playerObject)-> calculateWinners(playerObject));
-        String gewinnerNachricht = "Gewinner: ";
+        String winnerMessage = "Gewinner: ";
         for(TabuPlayer winner: this.winners){
-            gewinnerNachricht += winner.getName() + " ";
+            winnerMessage += winner.getName() + " ";
         }
-        gewinnerNachricht += String.format("mit %d Punkten", this.winners.get(0).getPoints());
+        winnerMessage += String.format("mit %d Punkten", this.winners.get(0).getPoints());
         Tabu.quitGame(this);
     }
 
+    //-------- calculate all winners -----------------------------------------------------------------------------------
     private void calculateWinners(TabuPlayer playerObject) {
         if(winners.get(0).getPoints() < playerObject.getPoints()){
             winners.clear();
@@ -214,6 +214,7 @@ public class TabuGame {
         }
     }
 
+    //-------- starts a round for the chosen player --------------------------------------------------------------------
     private void startRoundFor(String player){
         Random randy = new Random();
         String[] wordArr = this.words.toArray(new String[words.size()]);
@@ -225,12 +226,7 @@ public class TabuGame {
             while (roundRunning) {
 
             }
-            sendMessageToAllPlayers("Runde beedet");
         }
-    }
-
-    private void stop() {
-        running = false;
     }
 
     private void choosePlayer(TabuPlayer player, String word) {
@@ -247,6 +243,7 @@ public class TabuGame {
         this.roundRunning = false;
     }
 
+    //-------- keine Ahnung. Das hat Oci gemacht -----------------------------------------------------------------------
     @EventHandler
     public void chatEvent(AsyncPlayerChatEvent e) {
         if(e.getPlayer().equals(currentPlayer.getPlayer())) {
