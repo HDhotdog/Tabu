@@ -104,10 +104,14 @@ public class Tabu implements CommandExecutor, Listener {
          * Spiel beenden
          */
         else if(args.length == 1 && args[0].equalsIgnoreCase("quit")) {
-            for(TabuGame game : tabuGames) {
-                if(game.getPlayers().containsKey(sender.getName())) {
-                    if(game.getCreator().getPlayer().equals(sender)) {
-                        game.quitGame();
+            if(sender instanceof Player) {
+                Player player = (Player)sender;
+                for (TabuGame game : tabuGames) {
+                    if (game.getPlayers().containsKey(player.getName())) {
+                        if (game.getCreator().getPlayer().equals(player)) {
+                            sender.sendMessage("Should quit game");
+                            game.quitGame();
+                        }
                     }
                 }
             }
