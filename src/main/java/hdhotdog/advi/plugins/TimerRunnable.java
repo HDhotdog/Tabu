@@ -17,7 +17,10 @@ public class TimerRunnable extends BukkitRunnable {
     }
     @Override
     public void run() {
+        //debugging
         player.sendMessage(secs+"");
+
+
         switch (secs) {
             case 90:
                 game.sendMessageToAllPlayers(game.prefix() + "Noch 1:30 Minuten");
