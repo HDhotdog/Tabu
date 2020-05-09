@@ -6,6 +6,7 @@ public class TabuPlayer{
     private Player player;
     private String name;
     private int points;
+    private boolean joinedGame;
 
     public TabuPlayer(Player player) {
         this.player = player;
@@ -26,6 +27,12 @@ public class TabuPlayer{
     }
     public void addPoint() {
         this.points++;
+    }
+    public boolean hasJoined() {
+        return this.joinedGame;
+    }
+    public void joinedGame(boolean joined) {
+        this.joinedGame = joined;
     }
 
     public void sendMessage(String s) {

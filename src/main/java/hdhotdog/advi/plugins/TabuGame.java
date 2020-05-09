@@ -10,6 +10,7 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import java.util.*;
 
 public class TabuGame {
+    private Main main;
     private Hashtable<String, TabuPlayer> players;
     private HashSet<String> bannedPlayers;
     private ArrayList<String> wordList = new ArrayList<String>();
@@ -24,9 +25,9 @@ public class TabuGame {
     private static String prefix = ChatColor.BLUE + "[TABU] ";
     private boolean roundRunning = false;
     private String currentWord;
-    private TabuTimer timer;
     private Set<String> keys;
     private HashSet<String> words;
+    private int taskID;
 
     //-------- Constructors --------------------------------------------------------------------------------------------
     public TabuGame(TabuPlayer creator, String name, int rounds) {
@@ -43,18 +44,19 @@ public class TabuGame {
         creator.sendMessage("Du bist ein Creator");
         creator.sendMessage(this.toString());
     }
+    public void setMain(Main m) {
+        main = m;
+    }
 
     public TabuGame(TabuPlayer creator, String name) {
         this(creator, name, 3);
     }
 
     public TabuGame(TabuPlayer creator) {
-        this(creator,"Tabu-Spiel" + games, 3);
+        this( creator,"Tabu-Spiel" + games, 3);
     }
 
-    public TabuGame(){
-
-    }
+    public TabuGame(){}
 
     public Hashtable<String, TabuPlayer> getPlayers() {
         return this.players;
@@ -75,7 +77,9 @@ public class TabuGame {
         boolean playerAlreadyAdded = this.players.containsKey(player);
         Player newPlayer = Bukkit.getPlayer(player);
         if (!playerAlreadyAdded && newPlayer != null) {
-            players.put(player, new TabuPlayer(newPlayer));
+            TabuPlayer tabuPlayer = new TabuPlayer(newPlayer);
+            players.put(player, tabuPlayer);
+            tabuPlayer.joinedGame(true);
             keys = players.keySet();
             return true;
         }
@@ -92,8 +96,9 @@ public class TabuGame {
 
     //-------- removePlayer --------------------------------------------------------------------------------------------
     public boolean removePlayer(String player) {
+        boolean removed = null == players.remove(player);
         keys = players.keySet();
-        return null == players.remove(player);
+        return removed;
     }
 
     public boolean[] removePlayers(String[] players){
@@ -112,7 +117,10 @@ public class TabuGame {
     public boolean[] addWords(String[] words){
         boolean[] wordsAdded = new boolean[words.length];
         for (int i = 0; i < words.length; i++) {
-            wordsAdded[i] = addWord(words[i]);
+            if(words[i] != null) {
+                wordsAdded[i] = addWord(words[i]);
+            }
+
         }
         return wordsAdded;
     }
@@ -157,6 +165,12 @@ public class TabuGame {
         }
         return false;
     }
+    //-------- unbanPlayer -----------------------------------------------------------------------------------------------
+    public boolean unbanPlayer(String player) {
+        boolean playerNotBanned = !this.bannedPlayers.contains(player);
+        bannedPlayers.remove(player);
+        return playerNotBanned;
+    }
 
     //-------- joinGame ------------------------------------------------------------------------------------------------
     public void joinGame(String player) {
@@ -185,7 +199,7 @@ public class TabuGame {
 
 
     //-------- misc ----------------------------------------------------------------------------------------------------
-    private String prefix() {
+    public String prefix() {
         return ChatColor.BLUE + String.format("[%s] ", this.name);
     }
 
@@ -193,7 +207,7 @@ public class TabuGame {
         Bukkit.getPlayer(player).sendMessage(this.prefix() + message);
     }
 
-    private void sendMessageToAllPlayers(String message) {
+    public void sendMessageToAllPlayers(String message) {
         Enumeration<String> currentlyJoinedPlayers = this.players.keys();
         while (currentlyJoinedPlayers.hasMoreElements()) {
             sendMessage(currentlyJoinedPlayers.nextElement(), message);
@@ -222,7 +236,7 @@ public class TabuGame {
             winnerMessage += winner.getName() + " ";
         }
         winnerMessage += String.format("mit %d Punkten", this.winners.get(0).getPoints());
-        Tabu.quitGame(this);
+        this.quitGame();
     }
 
     //-------- calculate all winners -----------------------------------------------------------------------------------
@@ -243,25 +257,22 @@ public class TabuGame {
         currentPlayer = players.get(player);
         if(currentPlayer != null) {
             sendMessageToAllPlayers("neue Runde startet");
-            choosePlayer(currentPlayer, this.currentWord);
-            while (roundRunning) {
-
-            }
+            startTimer(currentPlayer, this.currentWord);
         }
     }
 
-    private void choosePlayer(TabuPlayer player, String word) {
-        sendMessageToAllPlayers(player.getName() + " ist an der Reihe");
-        player.sendMessage(prefix + "Du bist an der Reihe. Dein Wort lautet: " + ChatColor.YELLOW + word);
-        timer = new TabuTimer(this);
+    private void startTimer(TabuPlayer player, String word) {
+        taskID = player.getPlayer().getServer().getScheduler().scheduleSyncRepeatingTask(this.main, new TimerRunnable(this, player, word), 0, 20*30);
     }
-
-    public void tellRemainingTime(String time) {
-        sendMessageToAllPlayers(this.prefix() + "Noch " + time + "!");
+    public void stopTimer() {
+        Bukkit.getScheduler().cancelTask(taskID);
     }
 
     public void endRound() {
         this.roundRunning = false;
+    }
+    public boolean isRunning() {
+        return this.running;
     }
 
     //-------- keine Ahnung. Das hat Oci gemacht -----------------------------------------------------------------------
@@ -274,7 +285,7 @@ public class TabuGame {
             }
         } else {
             if(players.containsKey(e.getPlayer().getName()) && e.getMessage().equalsIgnoreCase(currentWord)) {
-                timer.stop();
+                stopTimer();
                 sendMessageToAllPlayers(e.getPlayer().getName() + " hat den Begriff " + ChatColor.YELLOW + currentWord + ChatColor.BLUE + "korrekt erraten!");
                 TabuPlayer winner = players.get(e.getPlayer().getName());
                 winner.addPoint();

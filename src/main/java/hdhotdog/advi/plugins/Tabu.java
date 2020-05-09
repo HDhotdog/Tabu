@@ -17,31 +17,17 @@ import java.util.*;
 
 public class Tabu implements CommandExecutor, Listener {
 
-    //private static ArrayList<TabuGame> tabuGames = new ArrayList<TabuGame>();
     private static Hashtable<String, TabuGame> tabuGames = new Hashtable<>();
-
-
-    private static FileConfiguration wordConfig;
-    public static LinkedList<TabuPlayer> playerList = new LinkedList<>();
-    public static ArrayList<Player> bannedPlayers = new ArrayList<Player>();
     public static ArrayList<String> wordList = new ArrayList<>();
-    public static boolean running = false;
-    public static boolean isStarted = false;
     public static String prefix = ChatColor.BLUE + "[TABU] ";
-    public static String currentWord;
-    public static TabuPlayer currentPlayer;
     public static String path = "words.txt";
     public static Main main;
-    public static Player creator;
-    public static TabuGame gameOfPlayer;
-    public static boolean isCreatorOfGame;
+
 
     public Tabu(FileConfiguration fileConfiguration, Main m) {
-        wordConfig = fileConfiguration;
-        main = m;
     }
-    public Tabu() {
-
+    public Tabu(Main m) {
+        main = m;
     }
 
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -90,14 +76,12 @@ public class Tabu implements CommandExecutor, Listener {
             } else {
                  tabuGame = new TabuGame(creator);
             }
-            //tabuGames.add(tabuGame);
+            tabuGame.setMain(main);
             if(tabuGames.containsKey(tabuGame.getName())) {
                 sender.sendMessage(prefix + "Es existiert bereit ein Spiel mit diesen Namen.");
                 return true;
             }
             tabuGames.put(tabuGame.getName(), tabuGame);
-
-
 
             String creatorName = "Console";
             if(fromPlayer) {
@@ -111,48 +95,85 @@ public class Tabu implements CommandExecutor, Listener {
             return true;
         }
         /**
+         * Spiele anzeigen
+         */
+        else if(args.length == 1 && args[0].equalsIgnoreCase("list")) {
+            sender.sendMessage(prefix + "Aktuelle Spiele:");
+            tabuGames.forEach((keys, values) -> sender.sendMessage(ChatColor.GREEN + "* "+ values.getName()));
+        }
+        /**
          * Spiel beenden
          */
         else if(args.length == 1 && args[0].equalsIgnoreCase("quit")) {
             if(sender instanceof Player) {
                 Player player = (Player)sender;
-                tabuGames.forEach((keys, value) -> value.quitGame());
-                /*if(gameOfPlayer.getCreator().getName().equals(player.getName())) {
-                    sender.sendMessage("Should quit game");
-                    gameOfPlayer.quitGame();
-                }*/
-
+                Set<String> keys = tabuGames.keySet();
+                for(String key : keys) {
+                    if(tabuGames.get(key).getCreator().getPlayer().equals(player)) {
+                        tabuGames.get(key).quitGame();
+                        tabuGames.remove(key);
+                        return true;
+                    }
+                }
+                player.sendMessage(prefix + "Du hast keine offenen Spiele.");
             }
         }
         /**
          * Wort hinzufügen
          */
-        else if(args.length == 2 && args[0].equalsIgnoreCase("add")) {
-            if(addWord(args[1])) {
-                sender.sendMessage(prefix + args[1] + " wurde hinzugefügt.");
-            } else {
-                sender.sendMessage(prefix + args[1] + " ist schon vorhanden.");
+        else if(args.length >= 2 && args[0].equalsIgnoreCase("add")) {
+            if(sender instanceof Player) {
+                Player player = (Player)sender;
+                TabuGame game = getGameOfPlayer(player);
+                if(game != null) {
+                    args[0] = null;
+                    boolean[] results = game.addWords(args);
+                    for(int i = 0; i < results.length-1; i++) {
+                        if(results[i]) {
+                            player.sendMessage(prefix + args[i+1] + "wurde hinzugefügt");
+                        } else {
+                            player.sendMessage(prefix + args[i+1] + "existiert schon");
+                        }
+                    }
+                }
+                return true;
             }
             return true;
         }
         /**
          * Wort entfernen
          */
-        else if (args.length == 2 && args[0].equalsIgnoreCase("remove")) {
-            if(deleteWord(args[1])) {
-                sender.sendMessage(ChatColor.GREEN + args[1] + " wurde gelöscht.");
-            } else {
-                sender.sendMessage(ChatColor.RED + args[1] + " ist nicht vorhanden.");
+        else if (args.length >= 2 && args[0].equalsIgnoreCase("remove")) {
+            if(sender instanceof Player) {
+                Player player = (Player)sender;
+                TabuGame game = getGameOfPlayer(player);
+                if(game != null) {
+                    args[0] = null;
+                    boolean[] results = game.removeWords(args);
+                    for(int i = 0; i < results.length-1; i++) {
+                        if(results[i]) {
+                            player.sendMessage(prefix + args[i+1] + "wurde entfernt");
+                        } else {
+                            player.sendMessage(prefix + args[i+1] + "ist nicht vorhanden");
+                        }
+                    }
+                }
             }
-            return true;
         }
         /**
          * Spiel beitreten
          */
-        else if (args.length == 1 && args[0].equalsIgnoreCase("join") && running) {
+        else if (args.length == 2 && args[0].equalsIgnoreCase("join")) {
             if(sender instanceof Player) {
-                TabuPlayer player = new TabuPlayer((Player)sender);
-                joinGame(player);
+                Player player = (Player)sender;
+                if(getGameOfPlayer(player) == null) {
+                    if (tabuGames.containsKey(args[1])) {
+                        tabuGames.get(args[1]).joinGame(player.getName());
+                    }
+                } else {
+                    player.sendMessage(prefix + "Du befindest dich bereits in einem Spiel. Nutze /tabu leave");
+                }
+
             } else {
                 sender.sendMessage(prefix+"Du kannst diesen Befehl hier nicht ausführen");
             }
@@ -160,14 +181,13 @@ public class Tabu implements CommandExecutor, Listener {
         /**
          * Spiel verlassen
          */
-        else if (args.length == 1 && args[0].equalsIgnoreCase("leave") && running) {
+        else if (args.length == 1 && args[0].equalsIgnoreCase("leave")) {
             if(sender instanceof Player) {
                 Player player = (Player)sender;
-                for(TabuPlayer p : playerList) {
-                    if (p.getPlayer().equals(player)) {
-                        leaveGame(p);
-                        break;
-                    }
+                if(getGameOfPlayer(player) != null) {
+                    getGameOfPlayer(player).leaveGame(player.getName());
+                } else {
+                    player.sendMessage(prefix + "Du befindest dich in keinem Spiel.");
                 }
             } else {
                 sender.sendMessage(prefix+"Du kannst diesen Befehl hier nicht ausführen.");
@@ -176,150 +196,92 @@ public class Tabu implements CommandExecutor, Listener {
         /**
          * Spiel starten
          */
-        else if(args.length == 1 && args[0].equalsIgnoreCase("start") && running) {
-            if(isStarted) {
-                sender.sendMessage(prefix + "Spiel wurde schon gestartet.");
+        else if(args.length == 1 && args[0].equalsIgnoreCase("start")) {
+            if(sender instanceof Player) {
+                Player player = (Player)sender;
+                TabuGame game = getGameOfPlayer(player);
+                if(game != null && game.getCreator().getPlayer().equals(player)) {
+                    game.start();
+                } else if (game == null){
+                    player.sendMessage(prefix + "Du befindest dich in keinem Spiel. Nutze /tabu create");
+                } else {
+                    player.sendMessage(prefix + "Du bist nicht Leiter dieses Spiels.");
+                }
             } else {
-                isStarted = true;
-
+                sender.sendMessage(prefix + "Du kannst diesen Befehl hier nicht ausführen.");
             }
         }
 
         /**
          * Spieler aus laufender Runde kicken
          */
-        else if (args.length == 2 && args[0].equalsIgnoreCase("kick") && running) {
-            if(kickPlayer(args[1])) {
-                sender.sendMessage( prefix + "Spieler entfernt");
+        else if (args.length == 2 && args[0].equalsIgnoreCase("kick")) {
+            if(sender instanceof Player) {
+                Player player = (Player)sender;
+                TabuGame game = getGameOfPlayer(player);
+                if(game == null) {
+                    player.sendMessage(prefix + "Du befindet dich in keinem Spiel!");
+                } else {
+                    if(!game.getCreator().getPlayer().equals(player)) {
+                        player.sendMessage(prefix + "Du bist nicht der Leiter dieses Spiels!");
+                    } else {
+                        if(game.getPlayers().containsKey(args[1])) {
+                            game.kickPlayer(game.getPlayers().get(args[1]).getName());
+                            player.sendMessage(prefix + args[1] + " wurde aus dem Spiel entfernt.");
+                        } else {
+                            player.sendMessage(prefix + args[1] + " befindet sich nicht im Spiel.");
+                        }
+                    }
+                }
             } else {
-                sender.sendMessage( prefix + "Spieler befindet sich nicht im Spiel");
+                sender.sendMessage(prefix + "Du kannst diesen Befehl hier nicht ausführen.");
             }
         }
 
         /**
          * Spieler aus laufender Runde bannen
          */
-        else if(args.length == 2 && args[0].equalsIgnoreCase("ban") && running) {
-            if(banPlayer(args[1])) {
-                if(sender instanceof Player) {
-                    for(TabuPlayer p : playerList) {
-                        p.getPlayer().sendMessage(prefix + args[1] + " wurde aus dem Spiel gebannt");
-                    }
+        else if(args.length == 2 && args[0].equalsIgnoreCase("ban")) {
+            if(sender instanceof Player) {
+                Player player = (Player)sender;
+                TabuGame game = getGameOfPlayer(player);
+                if(game == null) {
+                    player.sendMessage(prefix + "Du befindest dich in keinem Spiel!");
+                } else if(!game.getCreator().getPlayer().equals(player)) {
+                    player.sendMessage(prefix + "Du bist nicht Leiter dieses Spiels!");
                 } else {
-                    sender.sendMessage(prefix + args[1] + " wurde aus dem Spiel gebannt");
-                    for(TabuPlayer p : playerList) {
-                        p.getPlayer().sendMessage(prefix + args[1] + " wurde aus dem Spiel gebannt");
-                    }
+                    game.banPlayer(args[1]);
+                    player.sendMessage(prefix + args[1] + " wurde aus dem Spiel gebannt!");
                 }
             } else {
-                sender.sendMessage(prefix + args[1] + " befindet sich nicht im Spiel");
+                sender.sendMessage(prefix + "Du kannst diesen Befehl hier nicht ausführen.");
             }
-
         }
 
         /**
          * Send List of Words to Sender
          */
         else if(args.length == 1 && args[0].equalsIgnoreCase("words")) {
-            sender.sendMessage(prefix + getListOfWords());
+            if(sender instanceof Player) {
+                Player player = (Player)sender;
+                TabuGame game = getGameOfPlayer(player);
+                if(game == null) {
+                    player.sendMessage(prefix + "Du befindest dich in keinem Spiel!");
+                } else if(!game.getCreator().getPlayer().equals(player)) {
+                    player.sendMessage(prefix + "Du bist nicht Leiter dieses Spiels!");
+                } else {
+                    player.sendMessage(prefix + getListOfWords());
+                }
+            } else {
+                sender.sendMessage(prefix + "Du kannst diesen Befehl hier nicht ausführen.");
+            }
         }
         return true;
-    }
-
-    private void isPlayerInGame(String player, TabuGame game) {
-        if(game.getPlayers().containsKey(player)) {
-            gameOfPlayer = game;
-        }
-    }
-
-    public static boolean addWord(String word) {
-
-        if(!wordList.contains(word)) {
-            return wordList.add(word);
-        }
-        return false;
-
-    }
-
-    public static boolean deleteWord(String word) {
-        boolean removed = false;
-        for(String s : wordList) {
-            if(s.equalsIgnoreCase(word)) {
-                removed = wordList.remove(word);
-            }
-        }
-        return removed;
-    }
-
-    public static boolean kickPlayer(String player) {
-        for(TabuPlayer p : playerList) {
-            if(p.getName().equalsIgnoreCase(player)) {
-                playerList.remove(p);
-                p.getPlayer().sendMessage(prefix + "Du wurdest entfernt");
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static boolean banPlayer(String player) {
-        for(TabuPlayer p : playerList) {
-            if(p.getName().equalsIgnoreCase(player)) {
-                playerList.remove(p);
-                bannedPlayers.add(p.getPlayer());
-                p.getPlayer().sendMessage( prefix + "Du wurdest gebannt");
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static void joinGame(TabuPlayer player) {
-        if(bannedPlayers.contains(player.getPlayer())) {
-            player.getPlayer().sendMessage(prefix + "Du kannst dem Spiel nicht beitreten, da du gebannt wurdest!");
-        } else {
-            if(playerListcontainsPlayer(player.getPlayer())) {
-                player.getPlayer().sendMessage(prefix +"Du bist dem Spiel schon beigetreten");
-            } else {
-                player.getPlayer().sendMessage( prefix + "Spiel beigetreten!");
-                for(TabuPlayer p : playerList) {
-                    p.getPlayer().sendMessage(prefix + player.getName() + " hat das Spiel betreten");
-                }
-                playerList.add(player);
-            }
-        }
-    }
-
-    public static void leaveGame(TabuPlayer player) {
-        if(playerList.contains(player)) {
-            player.getPlayer().sendMessage(prefix + "Du bist in keinem Spiel");
-        } else {
-            playerList.remove(player);
-            player.getPlayer().sendMessage(prefix + "Du hast das Spiel verlassen");
-            for(TabuPlayer p : playerList) {
-                p.getPlayer().sendMessage(prefix + player.getName() + " hat das Spiel verlassen");
-            }
-        }
     }
 
     @EventHandler
     public void chatEvent(AsyncPlayerChatEvent e) {
         tabuGames.forEach((keys,value) -> value.chatEvent(e));
-    }
-
-    public void sendMessageToAllPlayers(String message) {
-        for(TabuPlayer p : playerList) {
-            p.getPlayer().sendMessage(prefix + message);
-        }
-    }
-
-    public static boolean playerListcontainsPlayer(Player player) {
-        for(TabuPlayer p : playerList) {
-            if(p.getPlayer().equals(player)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public String getListOfWords() {
@@ -336,10 +298,13 @@ public class Tabu implements CommandExecutor, Listener {
             p.sendMessage(prefix + message);
         }
     }
-
-    public static void quitGame(TabuGame game) {
-        //TODO alle Spieler entfernen/kicken
-        tabuGames.remove(game);
+    public TabuGame getGameOfPlayer(Player player) {
+        Set<String> keys = tabuGames.keySet();
+        for(String key : keys) {
+            if(tabuGames.get(key).getPlayers().containsKey(player.getName())) {
+                return tabuGames.get(key);
+            }
+        }
+        return null;
     }
-
 }
