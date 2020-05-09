@@ -22,7 +22,7 @@ public class TabuGame {
     private TabuPlayer creator;
     private boolean running = false;
     private TabuPlayer currentPlayer;
-    private static String prefix = ChatColor.BLUE + "[TABU] ";
+    private static String prefix = ChatColor.BLUE + "[TABU] " + ChatColor.GREEN;
     private boolean roundRunning = false;
     private String currentWord;
     private Set<String> keys;
@@ -41,8 +41,6 @@ public class TabuGame {
         this.players = new Hashtable<>();
         this.bannedPlayers = new HashSet<String>();
         this.words = new HashSet<>();
-        creator.sendMessage("Du bist ein Creator");
-        creator.sendMessage(this.toString());
     }
     public void setMain(Main m) {
         main = m;
@@ -200,7 +198,7 @@ public class TabuGame {
 
     //-------- misc ----------------------------------------------------------------------------------------------------
     public String prefix() {
-        return ChatColor.BLUE + String.format("[%s] ", this.name);
+        return ChatColor.BLUE + String.format("[%s] ", this.name) + ChatColor.GREEN;
     }
 
     private void sendMessage(String player, String message){
@@ -219,7 +217,7 @@ public class TabuGame {
     }
 
     public String toString(){
-        return String.format("%s hat %d Spieler und %d Wörter die über %d Runden geraten werden.",
+        return String.format(prefix() + "%s hat %d Spieler und %d Wörter die über %d Runden geraten werden.",
                 this.name, this.players.size(), this.words.size(), this.rounds);
     }
 
@@ -256,7 +254,6 @@ public class TabuGame {
         this.currentWord = wordArr[randy.nextInt(words.size())];
         currentPlayer = players.get(player);
         if(currentPlayer != null) {
-            sendMessageToAllPlayers("neue Runde startet");
             startTimer(currentPlayer, this.currentWord);
         }
     }

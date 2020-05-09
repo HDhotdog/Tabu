@@ -1,5 +1,6 @@
 package hdhotdog.advi.plugins;
 
+import javafx.scene.control.Tab;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -19,7 +20,7 @@ public class Tabu implements CommandExecutor, Listener {
 
     private static Hashtable<String, TabuGame> tabuGames = new Hashtable<>();
     public static ArrayList<String> wordList = new ArrayList<>();
-    public static String prefix = ChatColor.BLUE + "[TABU] ";
+    public static String prefix = ChatColor.BLUE + "[TABU] " + ChatColor.GREEN;
     public static String path = "words.txt";
     public static Main main;
 
@@ -130,9 +131,9 @@ public class Tabu implements CommandExecutor, Listener {
                     boolean[] results = game.addWords(args);
                     for(int i = 0; i < results.length-1; i++) {
                         if(results[i]) {
-                            player.sendMessage(prefix + args[i+1] + "wurde hinzugefügt");
+                            player.sendMessage(prefix + args[i+1] + " wurde hinzugefügt");
                         } else {
-                            player.sendMessage(prefix + args[i+1] + "existiert schon");
+                            player.sendMessage(prefix + args[i+1] + " existiert bereits");
                         }
                     }
                 }
@@ -274,6 +275,20 @@ public class Tabu implements CommandExecutor, Listener {
                 }
             } else {
                 sender.sendMessage(prefix + "Du kannst diesen Befehl hier nicht ausführen.");
+            }
+        }
+        /**
+         * Spielinfo anzeigen
+         */
+        else if(args.length == 1 && args[0].equalsIgnoreCase("info")) {
+            if(sender instanceof Player) {
+                Player player = (Player)sender;
+                TabuGame game = getGameOfPlayer(player);
+                if(game == null) {
+                    player.sendMessage(prefix+"Du befindest dich in keinem Spiel.");
+                } else {
+                    player.sendMessage(game.toString());
+                }
             }
         }
         return true;
