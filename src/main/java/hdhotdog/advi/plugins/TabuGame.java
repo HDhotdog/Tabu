@@ -259,10 +259,16 @@ public class TabuGame {
     }
 
     private void startTimer(TabuPlayer player, String word) {
-        taskID = player.getPlayer().getServer().getScheduler().scheduleSyncRepeatingTask(this.main, new TimerRunnable(this, player, word), 0, 20L);
+        //taskID = player.getPlayer().getServer().getScheduler().scheduleSyncRepeatingTask(this.main, new TimerRunnable(this, player, word), 0, 20L);
+        TabuTimer timer = new TabuTimer(this);
+        timer.start();
+        while(roundRunning) {
+
+        }
     }
     public void stopTimer() {
-        Bukkit.getScheduler().cancelTask(taskID);
+        //Bukkit.getScheduler().cancelTask(taskID);
+        roundRunning = false;
     }
 
     public void endRound() {
