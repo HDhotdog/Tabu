@@ -259,18 +259,47 @@ public class TabuGame {
     }
 
     private void startTimer(TabuPlayer player, String word) {
-        //taskID = player.getPlayer().getServer().getScheduler().scheduleSyncRepeatingTask(this.main, new TimerRunnable(this, player, word), 0, 20L);
-        TabuTimer timer = new TabuTimer(this);
-        timer.start();
+        /*//taskID = player.getPlayer().getServer().getScheduler().scheduleSyncRepeatingTask(this.main, new TimerRunnable(this, player, word), 0, 20L);
+        TabuTimer timer = new TabuTimer(this, player, word);
+        timer.run();
         while(roundRunning) {
+            try {
+                this.wait(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }*/
+        sendMessageToAllPlayers(player.getName() + " ist an der Reihe");
+        player.sendMessage(prefix() + "Du bist an der Reihe. Dein Wort lautet: " + ChatColor.YELLOW + word);
+        Bukkit.getScheduler().runTaskTimer(this.main, new Runnable()
+        {
+            int time = 120; //or any other number you want to start countdown from
 
-        }
+            @Override
+            public void run()
+            {
+                if(this.time == 110) {
+                    creator.sendMessage(prefix() + "Noch 110 Sekunden");
+                } else if(this.time == 60) {
+                    sendMessageToAllPlayers(prefix() + "Noch 60 Sekunden");
+                } else if(this.time == 30) {
+                    sendMessageToAllPlayers(prefix() + "Noch 30 Sekunden");
+                } else if(this.time == 10) {
+                    sendMessageToAllPlayers(prefix() + "Noch 10 Sekunden");
+                } else if (this.time == 0) {
+                    return;
+                }
+                this.time--;
+            }
+        }, 0L, 20L);
     }
     public void stopTimer() {
         //Bukkit.getScheduler().cancelTask(taskID);
         roundRunning = false;
     }
-
+    public void startRunning() {
+        this.roundRunning = true;
+    }
     public void endRound() {
         this.roundRunning = false;
     }
