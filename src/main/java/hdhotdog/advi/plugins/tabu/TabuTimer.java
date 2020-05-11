@@ -1,8 +1,6 @@
-package hdhotdog.advi.plugins;
+package hdhotdog.advi.plugins.tabu;
 
 import org.bukkit.ChatColor;
-
-import javax.swing.*;
 
 public class TabuTimer implements Runnable {
     private TabuGame game;

@@ -1,6 +1,6 @@
-package hdhotdog.advi.plugins;
+package hdhotdog.advi.plugins.tabu;
 
-import javafx.scene.control.Tab;
+import hdhotdog.advi.plugins.Main;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -12,7 +12,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 
-import java.io.*;
 import java.util.*;
 
 

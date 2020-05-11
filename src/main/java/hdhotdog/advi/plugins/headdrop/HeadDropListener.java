@@ -1,5 +1,6 @@
-package hdhotdog.advi.plugins;
+package hdhotdog.advi.plugins.headdrop;
 
+import hdhotdog.advi.plugins.Main;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;

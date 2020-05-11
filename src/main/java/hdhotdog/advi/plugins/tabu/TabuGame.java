@@ -1,7 +1,7 @@
-package hdhotdog.advi.plugins;
+package hdhotdog.advi.plugins.tabu;
 
+import hdhotdog.advi.plugins.Main;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;

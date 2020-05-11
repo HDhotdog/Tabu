@@ -1,4 +1,4 @@
-package hdhotdog.advi.plugins;
+package hdhotdog.advi.plugins.tabu;
 
 import org.bukkit.entity.Player;
 
