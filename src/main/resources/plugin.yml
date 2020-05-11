@@ -7,3 +7,6 @@
     tabu:
       description: the tabu game
       usage: /tabu <param>
+    vanish:
+      description: makes the player invisible to others
+      usage: /vanish
