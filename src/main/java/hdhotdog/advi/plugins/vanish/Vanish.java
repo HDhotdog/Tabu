@@ -24,10 +24,11 @@ public class Vanish implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(sender instanceof Player) {
             Player player = (Player)sender;
-            if(hiddenPlayers.contains(player)) {
+            if(!hiddenPlayers.contains(player)) {
                 for (Player players : Bukkit.getOnlinePlayers()) {
                     player.hidePlayer(this.main, players);
                     hiddenPlayers.add(player);
+
                     player.sendMessage(prefix + "Du bist nun für andere Benutzer unsichtbar.");
                 }
             } else {
