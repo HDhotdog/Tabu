@@ -12,7 +12,7 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.*;
 
 public class TabuGame {
-    private Main main;
+    public Main main;
     private Hashtable<String, TabuPlayer> players;
     private HashSet<String> bannedPlayers;
     private ArrayList<String> wordList = new ArrayList<String>();
@@ -227,7 +227,7 @@ public class TabuGame {
     public void start(){
         running = true;
         ArrayList<TabuPlayer> listOfPlayers = new ArrayList<>(players.values());
-        int taskID = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this.main, timer = new TabuTimer(this, rounds, listOfPlayers),0, 120*20L);
+        taskID = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this.main, timer = new TabuTimer(this, rounds, listOfPlayers),0, 120*20L);
 
     }
 

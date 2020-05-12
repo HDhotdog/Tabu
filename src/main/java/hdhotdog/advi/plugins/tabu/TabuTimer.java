@@ -1,6 +1,6 @@
 package hdhotdog.advi.plugins.tabu;
 
-import com.google.gson.internal.$Gson$Preconditions;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
@@ -18,6 +18,8 @@ public class TabuTimer implements Runnable {
     private ArrayList<TabuPlayer> players;
     private ArrayList<String> words;
     private ArrayList<TabuPlayer> winners = new ArrayList<>();
+    public int taskID;
+    public int round = 0;
 
     //private Thread thread;
     private boolean running = true;
@@ -33,56 +35,40 @@ public class TabuTimer implements Runnable {
             currentPlayer++;
         }
         Random random = new Random();
-        String word = this.words.get(random.nextInt(this.words.size()));
+        word = this.words.get(random.nextInt(this.words.size()));
         player = players.get(currentPlayer-1);
         game.sendMessageToAllPlayers(game.prefix() + player.getName() + " ist an der Reihe.");
         player.getPlayer().sendMessage(game.prefix() + "Du bist an der Reihe! Dein Wort lautet " + ChatColor.YELLOW + word);
     }
 
     public void run() {
-        try {
-            synchronized (this) {
-                this.wait(30000);
-                game.sendMessageToAllPlayers(game.prefix() + "Noch 90 Sekunden!");
-                this.wait(30000);
-                game.sendMessageToAllPlayers(game.prefix() + "Noch 60 Sekunden!");
-                this.wait(30000);
-                game.sendMessageToAllPlayers(game.prefix() + "Noch 30 Sekunden!");
-                this.wait(20000);
-                game.sendMessageToAllPlayers(game.prefix() + "Noch 10 Sekunden!");
-                this.wait(7000);
-                game.sendMessageToAllPlayers(game.prefix() + "3");
-                this.wait(1000);
-                game.sendMessageToAllPlayers(game.prefix() + "2");
-                this.wait(1000);
-                game.sendMessageToAllPlayers(game.prefix() + "1");
-                this.wait(1000);
-            }
-            game.sendMessageToAllPlayers(game.prefix() + "Vorbei! Das Wort war " + ChatColor.YELLOW + word);
-            if(currentRound == roundLimit && currentPlayer == players.size()) {
-                int maxPoints = 0;
-                for(int i = 0; i < players.size(); i++) {
-                    if(players.get(i).getPoints() > maxPoints) {
-                        winners.clear();
-                        winners.add(players.get(i));
-                        maxPoints = players.get(i).getPoints();
-                    } else if(players.get(i).getPoints() >= maxPoints) {
-                        winners.add(players.get(i));
-                        maxPoints = players.get(i).getPoints();
+
+
+                taskID = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this.game.main, new TimerRunnable(this.game, this),20*30L, 20*30L);
+                if(this.round == 4) {
+                    game.sendMessageToAllPlayers(game.prefix() + "Vorbei! Das Wort war " + ChatColor.YELLOW + word);
+                    if (currentRound == roundLimit && currentPlayer == players.size()) {
+                        int maxPoints = 0;
+                        for (int i = 0; i < players.size(); i++) {
+                            if (players.get(i).getPoints() > maxPoints) {
+                                winners.clear();
+                                winners.add(players.get(i));
+                                maxPoints = players.get(i).getPoints();
+                            } else if (players.get(i).getPoints() >= maxPoints) {
+                                winners.add(players.get(i));
+                                maxPoints = players.get(i).getPoints();
+                            }
+                        }
+                        String winnerMessage = "Gewinner: ";
+                        for (TabuPlayer winner : this.winners) {
+                            winnerMessage += winner.getName() + " ";
+                        }
+                        winnerMessage += String.format("mit %d Punkten", this.winners.get(0).getPoints());
+                        this.game.sendMessageToAllPlayers(game.prefix() + winnerMessage);
+                        this.game.quitGame();
+                        Bukkit.getServer().getScheduler().cancelTask(game.taskID);
                     }
                 }
-                String winnerMessage = "Gewinner: ";
-                for(TabuPlayer winner: this.winners){
-                    winnerMessage += winner.getName() + " ";
-                }
-                winnerMessage += String.format("mit %d Punkten", this.winners.get(0).getPoints());
-                this.game.sendMessageToAllPlayers(game.prefix() + winnerMessage);
-                this.game.quitGame();
-            }
-        } catch (InterruptedException e) {
-            e.getStackTrace();
-    }
-
     }
 
     public int getRound() {
@@ -90,6 +76,12 @@ public class TabuTimer implements Runnable {
     }
     public int getCurrentPlayer() {
         return currentPlayer;
+    }
+    public TabuPlayer getCurrentTabuPlayer() {
+        return this.player;
+    }
+    public void cancel() {
+        Bukkit.getScheduler().cancelTask(taskID);
     }
     public void chatEvent(AsyncPlayerChatEvent e) {
         if(e.getPlayer().equals(players.get(currentPlayer-1).getPlayer())) {
