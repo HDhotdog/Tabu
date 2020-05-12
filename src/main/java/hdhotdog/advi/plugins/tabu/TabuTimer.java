@@ -21,6 +21,7 @@ public class TabuTimer implements Runnable {
     public int taskID;
     public int round = 0;
 
+
     //private Thread thread;
     private boolean running = true;
     public TabuTimer(TabuGame game, int rounds, ArrayList<TabuPlayer> players) {
@@ -44,7 +45,7 @@ public class TabuTimer implements Runnable {
     public void run() {
 
 
-                taskID = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this.game.main, new TimerRunnable(this.game, this),20*30L, 20*30L);
+                taskID = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this.game.main, new TimerRunnable(this.game, this),20*10L, 20*10L);
                 if(this.round == 4) {
                     game.sendMessageToAllPlayers(game.prefix() + "Vorbei! Das Wort war " + ChatColor.YELLOW + word);
                     if (currentRound == roundLimit && currentPlayer == players.size()) {

@@ -227,7 +227,7 @@ public class TabuGame {
     public void start(){
         running = true;
         ArrayList<TabuPlayer> listOfPlayers = new ArrayList<>(players.values());
-        taskID = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this.main, timer = new TabuTimer(this, rounds, listOfPlayers),0, 120*20L);
+        taskID = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this.main, timer = new TabuTimer(this, rounds, listOfPlayers),0, 20*40L);
 
     }
 
