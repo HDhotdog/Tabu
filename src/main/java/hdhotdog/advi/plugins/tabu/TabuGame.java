@@ -1,11 +1,13 @@
 package hdhotdog.advi.plugins.tabu;
 
+import com.google.common.collect.ArrayListMultimap;
 import hdhotdog.advi.plugins.Main;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
 
@@ -26,9 +28,9 @@ public class TabuGame {
     private boolean roundRunning = false;
     private String currentWord;
     private Set<String> keys;
-    private HashSet<String> words;
-    private int taskID;
-
+    public HashSet<String> words;
+    public int taskID;
+    public TabuTimer timer;
     //-------- Constructors --------------------------------------------------------------------------------------------
     public TabuGame(TabuPlayer creator, String name, int rounds) {
         this.creator = creator;
@@ -224,17 +226,9 @@ public class TabuGame {
     //-------- game control --------------------------------------------------------------------------------------------
     public void start(){
         running = true;
-        for(;this.rounds > 0; rounds--){
-            players.forEach((playerName, playerObject)-> startRoundFor(playerName));
-        }
+        ArrayList<TabuPlayer> listOfPlayers = new ArrayList<>(players.values());
+        int taskID = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this.main, timer = new TabuTimer(this, rounds, listOfPlayers),0, 120*20L);
 
-        this.players.forEach((playerName, playerObject)-> calculateWinners(playerObject));
-        String winnerMessage = "Gewinner: ";
-        for(TabuPlayer winner: this.winners){
-            winnerMessage += winner.getName() + " ";
-        }
-        winnerMessage += String.format("mit %d Punkten", this.winners.get(0).getPoints());
-        this.quitGame();
     }
 
     //-------- calculate all winners -----------------------------------------------------------------------------------
@@ -271,27 +265,7 @@ public class TabuGame {
         }*/
         sendMessageToAllPlayers(player.getName() + " ist an der Reihe");
         player.sendMessage(prefix() + "Du bist an der Reihe. Dein Wort lautet: " + ChatColor.YELLOW + word);
-        Bukkit.getScheduler().runTaskTimer(this.main, new Runnable()
-        {
-            int time = 120; //or any other number you want to start countdown from
 
-            @Override
-            public void run()
-            {
-                if(this.time == 110) {
-                    creator.sendMessage(prefix() + "Noch 110 Sekunden");
-                } else if(this.time == 60) {
-                    sendMessageToAllPlayers(prefix() + "Noch 60 Sekunden");
-                } else if(this.time == 30) {
-                    sendMessageToAllPlayers(prefix() + "Noch 30 Sekunden");
-                } else if(this.time == 10) {
-                    sendMessageToAllPlayers(prefix() + "Noch 10 Sekunden");
-                } else if (this.time == 0) {
-                    return;
-                }
-                this.time--;
-            }
-        }, 0L, 20L);
     }
     public void stopTimer() {
         //Bukkit.getScheduler().cancelTask(taskID);
@@ -310,20 +284,7 @@ public class TabuGame {
     //-------- keine Ahnung. Das hat Oci gemacht -----------------------------------------------------------------------
     @EventHandler
     public void chatEvent(AsyncPlayerChatEvent e) {
-        if(e.getPlayer().equals(currentPlayer.getPlayer())) {
-            if(!e.getMessage().startsWith("/tabu")) {
-                e.setCancelled(true);
-                e.getPlayer().sendMessage(prefix+"Du kannst keine Nachrichten senden, während du an der Reihe bist");
-            }
-        } else {
-            if(players.containsKey(e.getPlayer().getName()) && e.getMessage().equalsIgnoreCase(currentWord)) {
-                stopTimer();
-                sendMessageToAllPlayers(e.getPlayer().getName() + " hat den Begriff " + ChatColor.YELLOW + currentWord + ChatColor.BLUE + "korrekt erraten!");
-                TabuPlayer winner = players.get(e.getPlayer().getName());
-                winner.addPoint();
-                winner.getPlayer().sendMessage(prefix + "Du hast einen Punkt erhalten. Aktuelle Punktzahl: " + winner.getPoints());
-            }
-        }
+        timer.chatEvent(e);
     }
 }
 

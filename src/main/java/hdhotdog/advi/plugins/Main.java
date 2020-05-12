@@ -1,5 +1,6 @@
 package hdhotdog.advi.plugins;
 
+import hdhotdog.advi.plugins.countdown.Countdown;
 import hdhotdog.advi.plugins.headdrop.HeadDropListener;
 import hdhotdog.advi.plugins.tabu.Tabu;
 import hdhotdog.advi.plugins.vanish.Vanish;
@@ -17,6 +18,7 @@ public class Main extends JavaPlugin {
         this.getServer().getPluginManager().registerEvents(new Tabu(this), this);
         this.getCommand("tabu").setExecutor(new Tabu(this));
         this.getCommand("vanish").setExecutor(new Vanish(this));
+        this.getCommand("countdown").setExecutor(new Countdown());
 
     }
     public void onDisable() {
