@@ -4,9 +4,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
 import java.util.Random;
+
+import static hdhotdog.advi.plugins.tabu.Tabu.main;
 
 public class TabuTimer implements Runnable {
     private TabuGame game;
@@ -20,72 +24,69 @@ public class TabuTimer implements Runnable {
     private ArrayList<TabuPlayer> winners = new ArrayList<>();
     public int taskID;
     public int round = 0;
+    public int loop = 0;
 
-
-    //private Thread thread;
-    private boolean running = true;
-    public TabuTimer(TabuGame game, int rounds, ArrayList<TabuPlayer> players) {
+    public TabuTimer(TabuGame game, TabuPlayer player) {
         this.game = game;
+        this.player = player;
         this.words = new ArrayList<>(this.game.words);
-        this.roundLimit = rounds;
-        this.players = players;
-        if(currentPlayer == players.size()) {
-            currentRound++;
-            currentPlayer = 0;
-        } else {
-            currentPlayer++;
-        }
+
         Random random = new Random();
         word = this.words.get(random.nextInt(this.words.size()));
-        player = players.get(currentPlayer-1);
         game.sendMessageToAllPlayers(game.prefix() + player.getName() + " ist an der Reihe.");
         player.getPlayer().sendMessage(game.prefix() + "Du bist an der Reihe! Dein Wort lautet " + ChatColor.YELLOW + word);
+        game.timer = this;
     }
-
+    @Override
     public void run() {
+        loop = 0;
+        BukkitScheduler scheduler = this.game.main.getServer().getScheduler();
 
-
-                taskID = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this.game.main, new TimerRunnable(this.game, this),20*10L, 20*10L);
-                if(this.round == 4) {
-                    game.sendMessageToAllPlayers(game.prefix() + "Vorbei! Das Wort war " + ChatColor.YELLOW + word);
-                    if (currentRound == roundLimit && currentPlayer == players.size()) {
-                        int maxPoints = 0;
-                        for (int i = 0; i < players.size(); i++) {
-                            if (players.get(i).getPoints() > maxPoints) {
-                                winners.clear();
-                                winners.add(players.get(i));
-                                maxPoints = players.get(i).getPoints();
-                            } else if (players.get(i).getPoints() >= maxPoints) {
-                                winners.add(players.get(i));
-                                maxPoints = players.get(i).getPoints();
-                            }
-                        }
-                        String winnerMessage = "Gewinner: ";
-                        for (TabuPlayer winner : this.winners) {
-                            winnerMessage += winner.getName() + " ";
-                        }
-                        winnerMessage += String.format("mit %d Punkten", this.winners.get(0).getPoints());
-                        this.game.sendMessageToAllPlayers(game.prefix() + winnerMessage);
-                        this.game.quitGame();
-                        Bukkit.getServer().getScheduler().cancelTask(game.taskID);
-                    }
+         taskID = scheduler.scheduleSyncRepeatingTask(this.game.main, new Runnable() {
+            @Override
+            public void run() {
+                if(120-(30-loop) != 0) {
+                    game.sendMessageToAllPlayers("Noch " + (120 - (30 * loop)) + " Sekunden");
                 }
+                loop++;
+                if(loop == 5) {
+                    cancelTask();
+                    game.sendMessageToAllPlayers(game.prefix() + "Vorbei! Das Wort war " + ChatColor.YELLOW + word);
+                    game.stopThread();
+                }
+            }
+        },0,20*10L);
+        //taskID = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this.game.main, new TimerRunnable(this.game, this),20*10L, 20*10L);
+        /*try {
+            Thread t1 = new Thread(new TimerRunnable(this.game, this));
+            t1.join();
+            game.sendMessageToAllPlayers("Noch 90 Sekunden!");
+            Thread t2 = new Thread(new TimerRunnable(this.game, this));
+            t2.join();
+            game.sendMessageToAllPlayers("Noch 60 Sekunden!");
+            Thread t3 = new Thread(new TimerRunnable(this.game, this));
+            t3.join();
+            game.sendMessageToAllPlayers("Noch 30 Sekunden!");
+            Thread t4 = new Thread(new TimerRunnable(this.game, this));
+            t4.join();
+            game.sendMessageToAllPlayers("Zeit abgelaufen!");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }*/
+
+    }
+    public void cancelTask() {
+        Bukkit.getServer().getScheduler().cancelTask(taskID);
     }
 
-    public int getRound() {
-        return currentRound;
-    }
-    public int getCurrentPlayer() {
-        return currentPlayer;
-    }
+
     public TabuPlayer getCurrentTabuPlayer() {
         return this.player;
     }
-    public void cancel() {
-        Bukkit.getScheduler().cancelTask(taskID);
-    }
+
     public void chatEvent(AsyncPlayerChatEvent e) {
-        if(e.getPlayer().equals(players.get(currentPlayer-1).getPlayer())) {
+
+        if(e.getPlayer().equals(player.getPlayer())) {
             if(!e.getMessage().startsWith("/tabu")) {
                 e.setCancelled(true);
                 e.getPlayer().sendMessage(game.prefix()+"Du kannst keine Nachrichten senden, während du an der Reihe bist");

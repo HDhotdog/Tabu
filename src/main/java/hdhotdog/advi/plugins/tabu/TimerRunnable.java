@@ -20,11 +20,11 @@ public class TimerRunnable implements Runnable {
     }
 
     public void run() {
-            count++;
-            game.sendMessageToAllPlayers("Noch " + (120 - (30 * count)) + " Sekunden");
-            if (count == 4) {
-                stop();
-            }
+        try {
+            this.wait(30000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
     public void stop() {
         count = 0;

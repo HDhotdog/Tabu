@@ -31,6 +31,8 @@ public class TabuGame {
     public HashSet<String> words;
     public int taskID;
     public TabuTimer timer;
+    private BukkitTask bukkitTask;
+    private int currentRound = 1;
     //-------- Constructors --------------------------------------------------------------------------------------------
     public TabuGame(TabuPlayer creator, String name, int rounds) {
         this.creator = creator;
@@ -227,7 +229,11 @@ public class TabuGame {
     public void start(){
         running = true;
         ArrayList<TabuPlayer> listOfPlayers = new ArrayList<>(players.values());
-        taskID = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this.main, timer = new TabuTimer(this, rounds, listOfPlayers),0, 20*40L);
+        //taskID = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this.main, timer = new TabuTimer(this, rounds, listOfPlayers),0, 20*40L);
+        ArrayList<TabuPlayer> list = new ArrayList<>(this.players.values());
+        roundRunning = true;
+        currentPlayer = list.get(0);
+        startThread(currentPlayer);
 
     }
 
@@ -239,6 +245,35 @@ public class TabuGame {
         }else if(winners.get(0).getPoints() == playerObject.getPoints()){
             winners.add(playerObject);
         }
+    }
+
+    private void startThread(TabuPlayer player) {
+        bukkitTask = Bukkit.getScheduler().runTask(this.main, new TabuTimer(this,player));
+    }
+    public void stopThread() {
+        bukkitTask.cancel();
+        ArrayList<TabuPlayer> list = new ArrayList<>(this.players.values());
+        sendMessageToAllPlayers(currentRound + "");
+        if((rounds == currentRound && currentPlayer.equals(list.get(list.size()-1)))) {
+            players.forEach((key,value) -> calculateWinners(value));
+            announceWinners();
+        } else {
+            if(currentPlayer.equals(list.get(list.size()-1))) {
+                currentPlayer = list.get(0);
+                currentRound++;
+            } else {
+                currentPlayer = list.get(list.indexOf(currentPlayer)+1);
+            }
+            startThread(currentPlayer);
+        }
+
+    }
+    private void announceWinners() {
+        String winnerMessage = "Gewinner: ";
+        for (TabuPlayer winner : this.winners) {
+            winnerMessage += winner.getName() + " ";
+        }
+        this.sendMessageToAllPlayers(winnerMessage);
     }
 
     //-------- starts a round for the chosen player --------------------------------------------------------------------
@@ -284,7 +319,9 @@ public class TabuGame {
     //-------- keine Ahnung. Das hat Oci gemacht -----------------------------------------------------------------------
     @EventHandler
     public void chatEvent(AsyncPlayerChatEvent e) {
-        timer.chatEvent(e);
+        if(roundRunning && timer != null){
+            timer.chatEvent(e);
+        }
     }
 }
 
