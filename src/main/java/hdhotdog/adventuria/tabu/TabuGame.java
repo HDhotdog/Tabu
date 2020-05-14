@@ -1,11 +1,9 @@
-package hdhotdog.advi.plugins.tabu;
+package hdhotdog.adventuria.tabu;
 
-import com.google.common.collect.ArrayListMultimap;
-import hdhotdog.advi.plugins.Main;
+import hdhotdog.adventuria.Main;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -13,6 +11,7 @@ import java.util.*;
 
 public class TabuGame {
     public Main main;
+    public Tabu tabuInstance;
     private Hashtable<String, TabuPlayer> players;
     private HashSet<String> bannedPlayers;
     private ArrayList<String> wordList = new ArrayList<String>();
@@ -26,10 +25,8 @@ public class TabuGame {
     private TabuPlayer currentPlayer;
     private static String prefix = ChatColor.BLUE + "[TABU] " + ChatColor.GREEN;
     private boolean roundRunning = false;
-    private String currentWord;
     private Set<String> keys;
     public HashSet<String> words;
-    public int taskID;
     public TabuTimer timer;
     private BukkitTask bukkitTask;
     private int currentRound = 1;
@@ -41,13 +38,15 @@ public class TabuGame {
         this.gameID = games;
         games++;
 
-        this.winners.add(creator);
         this.players = new Hashtable<>();
         this.bannedPlayers = new HashSet<String>();
         this.words = new HashSet<>();
     }
     public void setMain(Main m) {
-        main = m;
+        this.main = m;
+    }
+    public void setTabuInstance(Tabu tabu) {
+        this.tabuInstance = tabu;
     }
 
     public TabuGame(TabuPlayer creator, String name) {
@@ -55,10 +54,8 @@ public class TabuGame {
     }
 
     public TabuGame(TabuPlayer creator) {
-        this( creator,"Tabu-Spiel" + games, 3);
+        this(creator,"Tabu-Spiel" + games, 3);
     }
-
-    public TabuGame(){}
 
     public Hashtable<String, TabuPlayer> getPlayers() {
         return this.players;
@@ -70,12 +67,19 @@ public class TabuGame {
         return this.name;
     }
     public void quitGame() {
-        players.forEach((key, value) -> kickPlayer(key, "Das Spiel ist vorbei."));
+        //Set<String> keys = players.keySet();
+        ArrayList<TabuPlayer> listToRemove = new ArrayList(players.values());
+        for(TabuPlayer player : listToRemove) {
+            kickPlayer(player.getName(), "Das Spiel ist vorbei!");
+        }
         creator.sendMessage(prefix()+this.name + " wurde beendet");
     }
 
     //-------- addPlayer -----------------------------------------------------------------------------------------------
     public boolean addPlayer(String player) {
+        if(running) {
+            return false;
+        }
         boolean playerAlreadyAdded = this.players.containsKey(player);
         Player newPlayer = Bukkit.getPlayer(player);
         if (!playerAlreadyAdded && newPlayer != null) {
@@ -88,13 +92,6 @@ public class TabuGame {
         return false;
     }
 
-    public boolean[] addPlayers(String[] players){
-        boolean[] playersAdded = new boolean[players.length];
-        for (int i = 0; i < players.length; i++) {
-            playersAdded[i] = addPlayer(players[i]);
-        }
-        return playersAdded;
-    }
 
     //-------- removePlayer --------------------------------------------------------------------------------------------
     public boolean removePlayer(String player) {
@@ -103,13 +100,6 @@ public class TabuGame {
         return removed;
     }
 
-    public boolean[] removePlayers(String[] players){
-        boolean[] playersRemoved = new boolean[players.length];
-        for (int i = 0; i < players.length; i++) {
-            playersRemoved[i] = removePlayer(players[i]);
-        }
-        return playersRemoved;
-    }
 
     //-------- addWord -------------------------------------------------------------------------------------------------
     public boolean addWord(String word) {
@@ -117,12 +107,9 @@ public class TabuGame {
     }
 
     public boolean[] addWords(String[] words){
-        boolean[] wordsAdded = new boolean[words.length];
-        for (int i = 0; i < words.length; i++) {
-            if(words[i] != null) {
-                wordsAdded[i] = addWord(words[i]);
-            }
-
+        boolean[] wordsAdded = new boolean[words.length-1];
+        for (int i = 1; i < words.length; i++) {
+            wordsAdded[i-1] = addWord(words[i]);
         }
         return wordsAdded;
     }
@@ -133,11 +120,11 @@ public class TabuGame {
     }
 
     public boolean[] removeWords(String[] words){
-        boolean[] wordsAdded = new boolean[words.length];
-        for (int i = 0; i < words.length; i++) {
-            wordsAdded[i] = removeWord(words[i]);
+        boolean[] wordsRemoved = new boolean[words.length-1];
+        for (int i = 1; i < words.length; i++) {
+            wordsRemoved[i-1] = removeWord(words[i]);
         }
-        return wordsAdded;
+        return wordsRemoved;
     }
 
 
@@ -171,6 +158,9 @@ public class TabuGame {
     public boolean unbanPlayer(String player) {
         boolean playerNotBanned = !this.bannedPlayers.contains(player);
         bannedPlayers.remove(player);
+        if(!playerNotBanned) {
+            this.players.get(player).sendMessage(prefix() + "Du wurdest entbannt.");
+        }
         return playerNotBanned;
     }
 
@@ -206,7 +196,7 @@ public class TabuGame {
     }
 
     private void sendMessage(String player, String message){
-        Bukkit.getPlayer(player).sendMessage(this.prefix() + message);
+        Objects.requireNonNull(Bukkit.getPlayer(player)).sendMessage(this.prefix() + message);
     }
 
     public void sendMessageToAllPlayers(String message) {
@@ -227,9 +217,8 @@ public class TabuGame {
 
     //-------- game control --------------------------------------------------------------------------------------------
     public void start(){
-        running = true;
+        this.running = true;
         ArrayList<TabuPlayer> listOfPlayers = new ArrayList<>(players.values());
-        //taskID = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this.main, timer = new TabuTimer(this, rounds, listOfPlayers),0, 20*40L);
         ArrayList<TabuPlayer> list = new ArrayList<>(this.players.values());
         roundRunning = true;
         currentPlayer = list.get(0);
@@ -239,24 +228,32 @@ public class TabuGame {
 
     //-------- calculate all winners -----------------------------------------------------------------------------------
     private void calculateWinners(TabuPlayer playerObject) {
-        if(winners.get(0).getPoints() < playerObject.getPoints()){
-            winners.clear();
+        if(winners.size() == 0){
             winners.add(playerObject);
-        }else if(winners.get(0).getPoints() == playerObject.getPoints()){
-            winners.add(playerObject);
+        }else {
+            if(winners.get(0).getPoints() < playerObject.getPoints()) {
+                winners.clear();
+                winners.add(playerObject);
+            } else if(winners.get(0).getPoints() == playerObject.getPoints()) {
+                winners.add(playerObject);
+            }
         }
     }
 
     private void startThread(TabuPlayer player) {
-        bukkitTask = Bukkit.getScheduler().runTask(this.main, new TabuTimer(this,player));
+        ArrayList<TabuPlayer> pls = new ArrayList<>(players.values());
+        bukkitTask = Bukkit.getScheduler().runTask(this.main, new TabuTimer(this,player, pls));
     }
     public void stopThread() {
         bukkitTask.cancel();
         ArrayList<TabuPlayer> list = new ArrayList<>(this.players.values());
-        sendMessageToAllPlayers(currentRound + "");
         if((rounds == currentRound && currentPlayer.equals(list.get(list.size()-1)))) {
             players.forEach((key,value) -> calculateWinners(value));
             announceWinners();
+            this.quitGame();
+            Bukkit.getScheduler().cancelTask(timer.taskID);
+            Tabu.tabuGames.remove(this.getName());
+
         } else {
             if(currentPlayer.equals(list.get(list.size()-1))) {
                 currentPlayer = list.get(0);
@@ -276,52 +273,28 @@ public class TabuGame {
         this.sendMessageToAllPlayers(winnerMessage);
     }
 
-    //-------- starts a round for the chosen player --------------------------------------------------------------------
-    private void startRoundFor(String player){
-        Random randy = new Random();
-        String[] wordArr = this.words.toArray(new String[words.size()]);
-        this.currentWord = wordArr[randy.nextInt(words.size())];
-        currentPlayer = players.get(player);
-        if(currentPlayer != null) {
-            startTimer(currentPlayer, this.currentWord);
+    public String getWords() {
+        ArrayList<String> wordsInOrder = new ArrayList<>();
+        wordsInOrder.addAll(words);
+        Collections.sort(wordsInOrder);
+        String s = "";
+        for (String word : wordsInOrder) {
+            s += word + ", ";
         }
+        if(!s.equals("")) {
+            s = s.substring(0, s.length()-2);
+        }
+        return s;
     }
 
-    private void startTimer(TabuPlayer player, String word) {
-        /*//taskID = player.getPlayer().getServer().getScheduler().scheduleSyncRepeatingTask(this.main, new TimerRunnable(this, player, word), 0, 20L);
-        TabuTimer timer = new TabuTimer(this, player, word);
-        timer.run();
-        while(roundRunning) {
-            try {
-                this.wait(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }*/
-        sendMessageToAllPlayers(player.getName() + " ist an der Reihe");
-        player.sendMessage(prefix() + "Du bist an der Reihe. Dein Wort lautet: " + ChatColor.YELLOW + word);
 
-    }
-    public void stopTimer() {
-        //Bukkit.getScheduler().cancelTask(taskID);
-        roundRunning = false;
-    }
-    public void startRunning() {
-        this.roundRunning = true;
-    }
-    public void endRound() {
-        this.roundRunning = false;
-    }
-    public boolean isRunning() {
-        return this.running;
-    }
 
-    //-------- keine Ahnung. Das hat Oci gemacht -----------------------------------------------------------------------
-    @EventHandler
+    //-------- ChatEvent Handler -----------------------------------------------------------------------
     public void chatEvent(AsyncPlayerChatEvent e) {
         if(roundRunning && timer != null){
             timer.chatEvent(e);
         }
+        Bukkit.getConsoleSender().sendMessage(timer.players.size() +"");
     }
 }
 

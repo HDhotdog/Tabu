@@ -1,4 +1,4 @@
-package hdhotdog.advi.plugins.tabu;
+package hdhotdog.adventuria.tabu;
 
 import org.bukkit.entity.Player;
 
@@ -27,9 +27,6 @@ public class TabuPlayer{
     }
     public void addPoint() {
         this.points++;
-    }
-    public boolean hasJoined() {
-        return this.joinedGame;
     }
     public void joinedGame(boolean joined) {
         this.joinedGame = joined;

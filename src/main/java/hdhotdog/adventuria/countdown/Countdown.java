@@ -1,4 +1,4 @@
-package hdhotdog.advi.plugins.countdown;
+package hdhotdog.adventuria.countdown;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;

@@ -1,5 +1,5 @@
   name: HeadDrop
-  main: hdhotdog.advi.plugins.Main
+  main: hdhotdog.adventuria.Main
   version: 1.0.0
   api-version: "1.13"
   description: Player Head Drop Plugin
@@ -7,11 +7,5 @@
     tabu:
       description: the tabu game
       usage: /tabu <param>
-    vanish:
-      description: makes the player invisible to others
-      usage: /vanish
-    countdown:
-      description: a countdown
-      usage: /cd <seconds> <"message"> <command>
-      aliases:
-        - cd
+    tabus:
+      description: just for change

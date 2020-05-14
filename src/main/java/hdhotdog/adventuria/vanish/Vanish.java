@@ -1,6 +1,6 @@
-package hdhotdog.advi.plugins.vanish;
+package hdhotdog.adventuria.vanish;
 
-import hdhotdog.advi.plugins.Main;
+import hdhotdog.adventuria.Main;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -9,8 +9,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 public class Vanish implements CommandExecutor {
     private final Main main;

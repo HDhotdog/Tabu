@@ -1,6 +1,6 @@
-package hdhotdog.advi.plugins.headdrop;
+package hdhotdog.adventuria.headdrop;
 
-import hdhotdog.advi.plugins.Main;
+import hdhotdog.adventuria.Main;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;

@@ -1,6 +1,6 @@
-package hdhotdog.advi.plugins.tabu;
+package hdhotdog.adventuria.tabu;
 
-import hdhotdog.advi.plugins.Main;
+import hdhotdog.adventuria.Main;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -17,8 +17,8 @@ import java.util.*;
 
 public class Tabu implements CommandExecutor, Listener {
 
-    private static Hashtable<String, TabuGame> tabuGames = new Hashtable<>();
-    public static ArrayList<String> wordList = new ArrayList<>();
+    public static Hashtable<String, TabuGame> tabuGames = new Hashtable<>();
+    //public static ArrayList<String> wordList = new ArrayList<>();
     public static String prefix = ChatColor.BLUE + "[TABU] " + ChatColor.GREEN;
     public static String path = "words.txt";
     public static Main main;
@@ -34,7 +34,11 @@ public class Tabu implements CommandExecutor, Listener {
         /**
          * Spiel erstellen
          */
-        if(args[0].equalsIgnoreCase("create")) {
+        if(args.length == 0) {
+            sender.sendMessage(prefix + "Das einzig wahre Tabu Spiel!");
+            return true;
+        }
+         else if(args[0].equalsIgnoreCase("create")) {
             String gameName = "";
             boolean hasName = false;
             int rounds = 0;
@@ -47,7 +51,6 @@ public class Tabu implements CommandExecutor, Listener {
             }
             if(args.length > 2) {
                 try {
-                    sender.sendMessage(args[2].trim());
                     if (Integer.parseInt(args[2]) < 1) {
                         throw new IllegalArgumentException();
                     } else {
@@ -77,6 +80,7 @@ public class Tabu implements CommandExecutor, Listener {
                  tabuGame = new TabuGame(creator);
             }
             tabuGame.setMain(main);
+            tabuGame.setTabuInstance(this);
             if(tabuGames.containsKey(tabuGame.getName())) {
                 sender.sendMessage(prefix + "Es existiert bereit ein Spiel mit diesen Namen.");
                 return true;
@@ -128,7 +132,7 @@ public class Tabu implements CommandExecutor, Listener {
                 if(game != null) {
                     args[0] = null;
                     boolean[] results = game.addWords(args);
-                    for(int i = 0; i < results.length-1; i++) {
+                    for(int i = 0; i < results.length; i++) {
                         if(results[i]) {
                             player.sendMessage(prefix + args[i+1] + " wurde hinzugefügt");
                         } else {
@@ -150,9 +154,9 @@ public class Tabu implements CommandExecutor, Listener {
                 if(game != null) {
                     args[0] = null;
                     boolean[] results = game.removeWords(args);
-                    for(int i = 0; i < results.length-1; i++) {
+                    for(int i = 0; i < results.length; i++) {
                         if(results[i]) {
-                            player.sendMessage(prefix + args[i+1] + "wurde entfernt");
+                            player.sendMessage(prefix + args[i+1] + " wurde entfernt");
                         } else {
                             player.sendMessage(prefix + args[i+1] + "ist nicht vorhanden");
                         }
@@ -201,7 +205,11 @@ public class Tabu implements CommandExecutor, Listener {
                 Player player = (Player)sender;
                 TabuGame game = getGameOfPlayer(player);
                 if(game != null && game.getCreator().getPlayer().equals(player)) {
-                    game.start();
+                    if(game.words.size() == 0) {
+                        player.sendMessage(prefix + "Keine Wörter vorhanden");
+                    } else {
+                        game.start();
+                    }
                 } else if (game == null){
                     player.sendMessage(prefix + "Du befindest dich in keinem Spiel. Nutze /tabu create");
                 } else {
@@ -250,14 +258,29 @@ public class Tabu implements CommandExecutor, Listener {
                 } else if(!game.getCreator().getPlayer().equals(player)) {
                     player.sendMessage(prefix + "Du bist nicht Leiter dieses Spiels!");
                 } else {
-                    game.banPlayer(args[1]);
-                    player.sendMessage(prefix + args[1] + " wurde aus dem Spiel gebannt!");
+                    if(game.banPlayer(args[1])){
+                        player.sendMessage(prefix + args[1] + " wurde aus dem Spiel gebannt!");
+                    }
                 }
             } else {
                 sender.sendMessage(prefix + "Du kannst diesen Befehl hier nicht ausführen.");
             }
         }
-
+        else if(args.length == 2 && args[0].equalsIgnoreCase("unban")) {
+            if(sender instanceof Player){
+                Player player = (Player)sender;
+                TabuGame game = getGameOfPlayer(player);
+                if(game == null) {
+                    player.sendMessage(prefix + "Du befindest dich in keinem Spiel!");
+                } else if(!game.getCreator().getPlayer().equals(player)) {
+                    player.sendMessage(prefix + "Du bist nicht Leitet dieses Spiels!");
+                } else {
+                    if(game.unbanPlayer(args[1])) {
+                        game.sendMessageToAllPlayers(args[1] + " wurde entbannt.");
+                    }
+                }
+            }
+        }
         /**
          * Send List of Words to Sender
          */
@@ -270,7 +293,7 @@ public class Tabu implements CommandExecutor, Listener {
                 } else if(!game.getCreator().getPlayer().equals(player)) {
                     player.sendMessage(prefix + "Du bist nicht Leiter dieses Spiels!");
                 } else {
-                    player.sendMessage(prefix + getListOfWords());
+                    player.sendMessage(prefix + game.getWords());
                 }
             } else {
                 sender.sendMessage(prefix + "Du kannst diesen Befehl hier nicht ausführen.");
@@ -289,22 +312,22 @@ public class Tabu implements CommandExecutor, Listener {
                     player.sendMessage(game.toString());
                 }
             }
+        } else {
+            sender.sendMessage(prefix + "Unbekannter Befehl");
         }
         return true;
     }
 
     @EventHandler
     public void chatEvent(AsyncPlayerChatEvent e) {
-        tabuGames.forEach((keys,value) -> value.chatEvent(e));
-    }
-
-    public String getListOfWords() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(" ");
-        for(int i = 0; i < wordList.size(); i++) {
-            sb.append(wordList.get(i)).append(" ");
+        //value = nuLl?
+        ArrayList<TabuGame> list = new ArrayList<>(tabuGames.values());
+        //tabuGames.forEach((keys,value) -> value.chatEvent(e));
+        for(TabuGame game : list) {
+            if(game != null) {
+                game.chatEvent(e);
+            }
         }
-        return sb.toString().trim();
     }
 
     public void sentToAllOnlinePlayer(String message) {
