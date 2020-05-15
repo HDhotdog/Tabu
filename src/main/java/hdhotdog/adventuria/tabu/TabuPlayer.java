@@ -3,8 +3,8 @@ package hdhotdog.adventuria.tabu;
 import org.bukkit.entity.Player;
 
 public class TabuPlayer{
-    private Player player;
-    private String name;
+    private final Player player;
+    private final String name;
     private int points;
     private boolean joinedGame;
 
@@ -27,6 +27,9 @@ public class TabuPlayer{
     }
     public void addPoint() {
         this.points++;
+    }
+    public void clearPoints() {
+        this.points = 0;
     }
     public void joinedGame(boolean joined) {
         this.joinedGame = joined;

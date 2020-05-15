@@ -6,29 +6,24 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
-
+import org.bukkit.event.player.PlayerQuitEvent;
 import java.util.*;
 
 
 public class Tabu implements CommandExecutor, Listener {
 
     public static Hashtable<String, TabuGame> tabuGames = new Hashtable<>();
-    //public static ArrayList<String> wordList = new ArrayList<>();
     public static String prefix = ChatColor.BLUE + "[TABU] " + ChatColor.GREEN;
-    public static String path = "words.txt";
     public static Main main;
 
-
-    public Tabu(FileConfiguration fileConfiguration, Main m) {
-    }
     public Tabu(Main m) {
         main = m;
     }
+
 
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         /**
@@ -38,7 +33,11 @@ public class Tabu implements CommandExecutor, Listener {
             sender.sendMessage(prefix + "Das einzig wahre Tabu Spiel!");
             return true;
         }
-         else if(args[0].equalsIgnoreCase("create")) {
+         else if(args[0].equalsIgnoreCase("create") || args[0].equalsIgnoreCase("createevent")) {
+             if(!sender.hasPermission("tabu.create.event") && args[0].equalsIgnoreCase("createevent")) {
+                 sender.sendMessage(prefix + "Du hast nicht die nötigen Berechtigungen!");
+                 return true;
+             }
             String gameName = "";
             boolean hasName = false;
             int rounds = 0;
@@ -79,6 +78,7 @@ public class Tabu implements CommandExecutor, Listener {
             } else {
                  tabuGame = new TabuGame(creator);
             }
+            tabuGame.eventGame = args[0].equalsIgnoreCase("createevent");
             tabuGame.setMain(main);
             tabuGame.setTabuInstance(this);
             if(tabuGames.containsKey(tabuGame.getName())) {
@@ -94,13 +94,36 @@ public class Tabu implements CommandExecutor, Listener {
             if(rounds == 0) {
                 rounds = 3;
             }
-            sentToAllOnlinePlayer(ChatColor.GREEN + creatorName +" hat " + gameName + " mit " + rounds + " Runden gestartet!");
+            if(args[0].equalsIgnoreCase("createevent")) {
+                sentToAllOnlinePlayer(ChatColor.GREEN + creatorName + " hat das Tabuevent " + gameName + " mit " + rounds + " Runden gestartet!");
+            } else {
+                sentToAllOnlinePlayer(ChatColor.GREEN + creatorName +" hat " + gameName + " mit " + rounds + " Runden gestartet!");
+            }
+
 
             return true;
         }
         /**
          * Spiele anzeigen
          */
+        else if(args.length == 2 && args[0].equalsIgnoreCase("setwarp")) {
+            if(sender instanceof Player) {
+                if(!sender.hasPermission("tabu.create.event")) {
+                    sender.sendMessage(prefix + "");
+                }
+                Player player = (Player)sender;
+                TabuGame game = getGameOfPlayer(player);
+                if(game == null) {
+                    player.sendMessage(prefix + "Du befindest dich in keinem Spiel");
+                } else if(!game.eventGame) {
+                    player.sendMessage(prefix + "Dieses Spiel ist kein Event");
+                } else {
+                    game.setWarp(args[1]);
+                    player.sendMessage(prefix + "Event Warp wurde auf " + args[1] + " gestellt.");
+                }
+            }
+        }
+
         else if(args.length == 1 && args[0].equalsIgnoreCase("list")) {
             sender.sendMessage(prefix + "Aktuelle Spiele:");
             tabuGames.forEach((keys, values) -> sender.sendMessage(ChatColor.GREEN + "* "+ values.getName()));
@@ -208,7 +231,12 @@ public class Tabu implements CommandExecutor, Listener {
                     if(game.words.size() == 0) {
                         player.sendMessage(prefix + "Keine Wörter vorhanden");
                     } else {
-                        game.start();
+                        if(game.eventGame && game.eventWarp == null) {
+                            player.sendMessage(prefix + "Es ist noch kein Warp für dieses Spiel gesetzt! Nutze /tabu setwarp <warp>");
+                        } else {
+                            game.start();
+                        }
+
                     }
                 } else if (game == null){
                     player.sendMessage(prefix + "Du befindest dich in keinem Spiel. Nutze /tabu create");
@@ -320,12 +348,19 @@ public class Tabu implements CommandExecutor, Listener {
 
     @EventHandler
     public void chatEvent(AsyncPlayerChatEvent e) {
-        //value = nuLl?
         ArrayList<TabuGame> list = new ArrayList<>(tabuGames.values());
-        //tabuGames.forEach((keys,value) -> value.chatEvent(e));
         for(TabuGame game : list) {
             if(game != null) {
                 game.chatEvent(e);
+            }
+        }
+    }
+    @EventHandler
+    public void quitEvent(PlayerQuitEvent e) {
+        ArrayList<TabuGame> list = new ArrayList<>(tabuGames.values());
+        for(TabuGame game : list)  {
+            if(game != null) {
+                game.quitEvent(e);
             }
         }
     }

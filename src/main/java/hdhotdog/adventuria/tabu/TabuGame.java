@@ -5,6 +5,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
@@ -12,24 +13,26 @@ import java.util.*;
 public class TabuGame {
     public Main main;
     public Tabu tabuInstance;
-    private Hashtable<String, TabuPlayer> players;
-    private HashSet<String> bannedPlayers;
-    private ArrayList<String> wordList = new ArrayList<String>();
-    private ArrayList<TabuPlayer> winners = new ArrayList<>();
-    private String name;
-    private int rounds;
-    private int gameID;
+    public boolean eventGame;
+    private final Hashtable<String, TabuPlayer> players;
+    private final HashSet<String> bannedPlayers;
+    private final ArrayList<TabuPlayer> winners = new ArrayList<>();
+    private final String name;
+    private final int rounds;
+    private final int gameID;
     private static int games = 0;
-    private TabuPlayer creator;
+    private final TabuPlayer creator;
     private boolean running = false;
     private TabuPlayer currentPlayer;
-    private static String prefix = ChatColor.BLUE + "[TABU] " + ChatColor.GREEN;
     private boolean roundRunning = false;
     private Set<String> keys;
     public HashSet<String> words;
+    public static HashSet<String> basicWords = new HashSet<>();
     public TabuTimer timer;
     private BukkitTask bukkitTask;
-    private int currentRound = 1;
+    public String eventWarp;
+    public static String basicWordsString = "Apfel Haus Baum Kirche Auto Fisch Maus Kuh Computer Lampe";
+    private final LinkedList<TabuPlayer> playerQueue = new LinkedList<>();
     //-------- Constructors --------------------------------------------------------------------------------------------
     public TabuGame(TabuPlayer creator, String name, int rounds) {
         this.creator = creator;
@@ -39,14 +42,18 @@ public class TabuGame {
         games++;
 
         this.players = new Hashtable<>();
-        this.bannedPlayers = new HashSet<String>();
+        this.bannedPlayers = new HashSet<>();
         this.words = new HashSet<>();
+        words.addAll(Arrays.asList(basicWordsString.split(" ")));
     }
     public void setMain(Main m) {
         this.main = m;
     }
     public void setTabuInstance(Tabu tabu) {
         this.tabuInstance = tabu;
+    }
+    public void setWarp(String warp) {
+        this.eventWarp = warp;
     }
 
     public TabuGame(TabuPlayer creator, String name) {
@@ -68,11 +75,15 @@ public class TabuGame {
     }
     public void quitGame() {
         //Set<String> keys = players.keySet();
-        ArrayList<TabuPlayer> listToRemove = new ArrayList(players.values());
+        ArrayList<TabuPlayer> listToRemove = new ArrayList<>(players.values());
         for(TabuPlayer player : listToRemove) {
             kickPlayer(player.getName(), "Das Spiel ist vorbei!");
         }
         creator.sendMessage(prefix()+this.name + " wurde beendet");
+        if(running) {
+            this.timer.cancelTask();
+        }
+        Tabu.tabuGames.remove(this.name);
     }
 
     //-------- addPlayer -----------------------------------------------------------------------------------------------
@@ -94,10 +105,14 @@ public class TabuGame {
 
 
     //-------- removePlayer --------------------------------------------------------------------------------------------
-    public boolean removePlayer(String player) {
-        boolean removed = null == players.remove(player);
+    public void removePlayer(String player) {
+        players.remove(player);
         keys = players.keySet();
-        return removed;
+        if(players.isEmpty()) {
+            this.quitGame();
+
+            bukkitTask.cancel();
+        }
     }
 
 
@@ -129,18 +144,16 @@ public class TabuGame {
 
 
     //-------- kickPlayer ----------------------------------------------------------------------------------------------
-    public boolean kickPlayer(String player, String message) {
+    public void kickPlayer(String player, String message) {
         boolean playerInGame = this.players.containsKey(player);
         if(playerInGame){
             this.players.get(player).sendMessage(this.prefix() + message);
             this.players.remove(player);
-            return true;
         }
-        return false;
     }
 
-    public boolean kickPlayer(String player){
-        return kickPlayer(player, "Du wurdest gekickt.");
+    public void kickPlayer(String player){
+        kickPlayer(player, "Du wurdest gekickt.");
     }
 
     //-------- banPlayer -----------------------------------------------------------------------------------------------
@@ -218,10 +231,15 @@ public class TabuGame {
     //-------- game control --------------------------------------------------------------------------------------------
     public void start(){
         this.running = true;
-        ArrayList<TabuPlayer> listOfPlayers = new ArrayList<>(players.values());
         ArrayList<TabuPlayer> list = new ArrayList<>(this.players.values());
+        for(int i = 0; i < this.rounds; i++) {
+            playerQueue.addAll(list);
+        }
         roundRunning = true;
-        currentPlayer = list.get(0);
+        currentPlayer = playerQueue.removeFirst();
+        while(!players.contains(currentPlayer)) {
+            currentPlayer = playerQueue.removeFirst();
+        }
         startThread(currentPlayer);
 
     }
@@ -243,48 +261,54 @@ public class TabuGame {
     private void startThread(TabuPlayer player) {
         ArrayList<TabuPlayer> pls = new ArrayList<>(players.values());
         bukkitTask = Bukkit.getScheduler().runTask(this.main, new TabuTimer(this,player, pls));
+        if(this.eventGame) {
+            Bukkit.dispatchCommand(player.getPlayer(), "warp " + this.eventWarp);
+        }
     }
     public void stopThread() {
         bukkitTask.cancel();
-        ArrayList<TabuPlayer> list = new ArrayList<>(this.players.values());
-        if((rounds == currentRound && currentPlayer.equals(list.get(list.size()-1)))) {
+
+        if(playerQueue.isEmpty()) {
             players.forEach((key,value) -> calculateWinners(value));
             announceWinners();
-            this.quitGame();
             Bukkit.getScheduler().cancelTask(timer.taskID);
-            Tabu.tabuGames.remove(this.getName());
+            running = false;
+            players.forEach((key,value) -> value.clearPoints());
+            creator.sendMessage(prefix() + "Das Spiel ist vorbei. Nutze /tabu play um eine neue Runde zu starten.");
+            winners.clear();
+            /*this.quitGame();
+            Bukkit.getScheduler().cancelTask(timer.taskID);
+            Tabu.tabuGames.remove(this.getName());*/
 
         } else {
-            if(currentPlayer.equals(list.get(list.size()-1))) {
-                currentPlayer = list.get(0);
-                currentRound++;
-            } else {
-                currentPlayer = list.get(list.indexOf(currentPlayer)+1);
+            currentPlayer = playerQueue.removeFirst();
+            while (!players.contains(currentPlayer)) {
+                currentPlayer = playerQueue.removeFirst();
             }
             startThread(currentPlayer);
         }
 
     }
     private void announceWinners() {
-        String winnerMessage = "Gewinner: ";
+        StringBuilder winnerMessage = new StringBuilder("Gewinner: ");
         for (TabuPlayer winner : this.winners) {
-            winnerMessage += winner.getName() + " ";
+            winnerMessage.append(winner.getName()).append(" ");
         }
-        this.sendMessageToAllPlayers(winnerMessage);
+        this.sendMessageToAllPlayers(winnerMessage.toString());
     }
 
     public String getWords() {
         ArrayList<String> wordsInOrder = new ArrayList<>();
         wordsInOrder.addAll(words);
         Collections.sort(wordsInOrder);
-        String s = "";
+        StringBuilder s = new StringBuilder();
         for (String word : wordsInOrder) {
-            s += word + ", ";
+            s.append(word).append(", ");
         }
-        if(!s.equals("")) {
-            s = s.substring(0, s.length()-2);
+        if(!s.toString().equals("")) {
+            s = new StringBuilder(s.substring(0, s.length() - 2));
         }
-        return s;
+        return s.toString();
     }
 
 
@@ -294,7 +318,11 @@ public class TabuGame {
         if(roundRunning && timer != null){
             timer.chatEvent(e);
         }
-        Bukkit.getConsoleSender().sendMessage(timer.players.size() +"");
+    }
+
+    public void quitEvent(PlayerQuitEvent e) {
+        Player player = e.getPlayer();
+        this.leaveGame(player.getName());
     }
 }
 

@@ -9,12 +9,10 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class TabuTimer implements Runnable {
-    private TabuGame game;
-    private TabuPlayer player;
-    private String word;
+    private final TabuGame game;
+    private final TabuPlayer player;
+    private final String word;
     public ArrayList<TabuPlayer> players;
-    private ArrayList<String> words;
-    private ArrayList<TabuPlayer> winners = new ArrayList<>();
     public int taskID;
     public int loop = 0;
 
@@ -22,12 +20,14 @@ public class TabuTimer implements Runnable {
         this.players = players;
         this.game = game;
         this.player = player;
-        this.words = new ArrayList<>(this.game.words);
 
+        ArrayList<String> words = new ArrayList<>(this.game.words);
         Random random = new Random();
-        word = this.words.get(random.nextInt(this.words.size()));
+        word = words.get(random.nextInt(words.size()));
+
         game.sendMessageToAllPlayers(player.getName() + " ist an der Reihe.");
         player.getPlayer().sendMessage(game.prefix() + "Du bist an der Reihe! Dein Wort lautet " + ChatColor.YELLOW + word);
+
         game.timer = this;
     }
     @Override
@@ -35,20 +35,21 @@ public class TabuTimer implements Runnable {
         loop = 0;
         BukkitScheduler scheduler = this.game.main.getServer().getScheduler();
 
-         taskID = scheduler.scheduleSyncRepeatingTask(this.game.main, new Runnable() {
-            @Override
-            public void run() {
-                if(120-(30*loop) != 0) {
-                    game.sendMessageToAllPlayers("Noch " + (120 - (30 * loop)) + " Sekunden");
-                }
-                loop++;
-                if(loop == 5) {
-                    cancelTask();
-                    game.sendMessageToAllPlayers("Vorbei! Das Wort war " + ChatColor.YELLOW + word);
-                    game.stopThread();
-                }
-            }
-        },0,20*5L);
+         taskID = scheduler.scheduleSyncRepeatingTask(this.game.main, () -> {
+             int remainingTime = 120-(30*loop);
+             if(remainingTime != 0) {
+                 game.sendMessageToAllPlayers("Noch " + remainingTime + " Sekunden");
+             }
+             loop++;
+             if(loop == 5) {
+                 cancelTask();
+                 game.sendMessageToAllPlayers("Vorbei! Das Wort war " + ChatColor.YELLOW + word);
+                 if(game.eventGame) {
+                     Bukkit.dispatchCommand(player.getPlayer(), "back");
+                 }
+                 game.stopThread();
+             }
+         },0,20*5L);
     }
     public void cancelTask() {
         Bukkit.getServer().getScheduler().cancelTask(taskID);
@@ -78,6 +79,9 @@ public class TabuTimer implements Runnable {
                         winner.getPlayer().sendMessage(game.prefix() + "Du hast einen Punkt erhalten. Aktuelle Punktzahl: " + winner.getPoints());
                         break;
                     }
+                }
+                if(game.eventGame) {
+                    Bukkit.dispatchCommand(player.getPlayer(), "back");
                 }
                 game.stopThread();
 
