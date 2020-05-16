@@ -11,7 +11,7 @@ import java.util.Random;
 public class TabuTimer implements Runnable {
     private final TabuGame game;
     private final TabuPlayer player;
-    private final String word;
+    private String word;
     public ArrayList<TabuPlayer> players;
     public int taskID;
     public int loop = 0;
@@ -23,7 +23,10 @@ public class TabuTimer implements Runnable {
 
         ArrayList<String> words = new ArrayList<>(this.game.words);
         Random random = new Random();
-        word = words.get(random.nextInt(words.size()));
+        do {
+            word = words.get(random.nextInt(words.size()));
+        }while(game.usedWords.contains(word));
+        game.usedWords.add(word);
 
         game.sendMessageToAllPlayers(player.getName() + " ist an der Reihe.");
         player.getPlayer().sendMessage(game.prefix() + "Du bist an der Reihe! Dein Wort lautet " + ChatColor.YELLOW + word);

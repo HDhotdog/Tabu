@@ -8,6 +8,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -346,7 +347,7 @@ public class Tabu implements CommandExecutor, Listener {
         return true;
         }
 
-        @EventHandler
+        @EventHandler(priority = EventPriority.NORMAL)
         public void chatEvent (AsyncPlayerChatEvent e){
             ArrayList<TabuGame> list = new ArrayList<>(tabuGames.values());
             for (TabuGame game : list) {
@@ -357,6 +358,9 @@ public class Tabu implements CommandExecutor, Listener {
         }
         @EventHandler
         public void quitEvent (PlayerQuitEvent e){
+            if(getGameOfPlayer(e.getPlayer()) == null) {
+              return;
+            }
             ArrayList<TabuGame> list = new ArrayList<>(tabuGames.values());
             for (TabuGame game : list) {
                 if (game != null) {

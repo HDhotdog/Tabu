@@ -33,6 +33,7 @@ public class TabuGame {
     public String eventWarp;
     public static String basicWordsString = "Apfel Haus Baum Kirche Auto Fisch Maus Kuh Computer Lampe Banane Adventuria Schokolade Bett Kiste";
     private final LinkedList<TabuPlayer> playerQueue = new LinkedList<>();
+    public HashSet<String> usedWords = new HashSet<>();
     //-------- Constructors --------------------------------------------------------------------------------------------
     public TabuGame(TabuPlayer creator, String name, int rounds) {
         this.creator = creator;
@@ -274,8 +275,10 @@ public class TabuGame {
             Bukkit.getScheduler().cancelTask(timer.taskID);
             running = false;
             players.forEach((key,value) -> value.clearPoints());
-            creator.sendMessage(prefix() + "Das Spiel ist vorbei. Nutze /tabu start um eine neue Runde zu starten.");
             winners.clear();
+            usedWords.clear();
+            creator.sendMessage(prefix() + "Das Spiel ist vorbei. Nutze /tabu start um eine neue Runde zu starten.");
+
 
         } else {
             currentPlayer = playerQueue.removeFirst();
