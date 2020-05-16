@@ -49,7 +49,7 @@ public class TabuTimer implements Runnable {
                  }
                  game.stopThread();
              }
-         },0,20*5L);
+         },0,20*30L);
     }
     public void cancelTask() {
         Bukkit.getServer().getScheduler().cancelTask(taskID);
