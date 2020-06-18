@@ -35,7 +35,7 @@ public class Tabu implements CommandExecutor, Listener {
                 sender.sendMessage(prefix + "Das einzig wahre Tabu Spiel!");
                 return true;
             } else if (args[0].equalsIgnoreCase("create") || args[0].equalsIgnoreCase("createevent")) {
-                if (!sender.hasPermission("tabu.create.event") && args[0].equalsIgnoreCase("createevent")) {
+                if (!sender.hasPermission("advi.tabu.event") && args[0].equalsIgnoreCase("createevent")) {
                     sender.sendMessage(prefix + "Du hast nicht die nötigen Berechtigungen!");
                     return true;
                 }
@@ -98,7 +98,7 @@ public class Tabu implements CommandExecutor, Listener {
                 if (args[0].equalsIgnoreCase("createevent")) {
                     sentToAllOnlinePlayer(ChatColor.GREEN + creatorName + " hat das Tabuevent " + gameName + " mit " + rounds + " Runden gestartet!");
                 } else {
-                    sentToAllOnlinePlayer(ChatColor.GREEN + creatorName + " hat " + gameName + " mit " + rounds + " Runden gestartet!");
+                    sentToAllOnlinePlayer(ChatColor.GREEN + creatorName + " hat " + tabuGame.getName() + " mit " + rounds + " Runden gestartet!");
                 }
 
 
@@ -347,7 +347,7 @@ public class Tabu implements CommandExecutor, Listener {
         return true;
         }
 
-        @EventHandler(priority = EventPriority.NORMAL)
+        @EventHandler(priority = EventPriority.HIGHEST)
         public void chatEvent (AsyncPlayerChatEvent e){
             ArrayList<TabuGame> list = new ArrayList<>(tabuGames.values());
             for (TabuGame game : list) {
