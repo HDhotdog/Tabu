@@ -1,5 +1,5 @@
   name: HeadDrop
-  main: hdhotdog.advi.plugins.Main
+  main: hdhotdog.adventuria.Main
   version: 1.0.0
   api-version: "1.13"
   description: Player Head Drop Plugin
@@ -7,3 +7,5 @@
     tabu:
       description: the tabu game
       usage: /tabu <param>
+    tabus:
+      description: just for change
