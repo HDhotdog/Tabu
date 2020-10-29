@@ -1,3 +1,2 @@
 # Tabu
-in Minecraft
-mit tollem Zeug und so
+A Taboo plugin for Minecraft Bukkit 
